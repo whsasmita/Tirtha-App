@@ -38,6 +38,7 @@ dependencies:
   get_it: ^8.2.0
   http: ^1.5.0
   material: ^1.0.0+2
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -65,6 +66,15 @@ flutter:
   # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
+
+  assets:
+    - assets/IconDoctor.png
+    - assets/logoTirthaApp.png
+    - assets/doctor.png
+    - assets/heart.png
+    - assets/pil.png
+    - assets/temperature.png
+    - assets/quiz.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
