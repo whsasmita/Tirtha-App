@@ -21,7 +21,7 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
     });
 
     if (index == 0) {
-      Navigator.pushNamed(context, AppRoutes.educationDashboard);
+      Navigator.pushNamed(context, AppRoutes.profile);
     } else if (index == 1) {
       Navigator.pushNamed(context, AppRoutes.educationDashboard);
     } else if (index == 2) {

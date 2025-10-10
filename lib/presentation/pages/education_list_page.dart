@@ -5,9 +5,31 @@ import 'package:tirtha_app/presentation/widgets/top_bar.dart';
 import 'package:tirtha_app/presentation/widgets/bottom_nav_v1.dart';
 import 'package:tirtha_app/presentation/widgets/grid_item_card.dart';
 import 'package:tirtha_app/presentation/widgets/home_header.dart';
+import 'package:tirtha_app/routes/app_routes.dart';
 
-class EducationPage extends StatelessWidget {
-  const EducationPage({Key? key}) : super(key: key);
+class EducationListPage extends StatefulWidget {
+  const EducationListPage({super.key});
+
+  @override
+  State<EducationListPage> createState() => _EducationDashboardPageState();
+}
+
+class _EducationDashboardPageState extends State<EducationListPage> {
+  int _selectedIndex = 1;
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    if (index == 0) {
+
+    } else if (index == 1) {
+      // Tetap di halaman ini
+    } else if (index == 2) {
+      Navigator.pushNamed(context, AppRoutes.profile);
+    }
+  }
 
   final List<Map<String, String>> educationItems = const [
     {
@@ -48,7 +70,8 @@ class EducationPage extends StatelessWidget {
             child: HomeHeader(
               title: 'EDUKASI KESEHATAN',
               backgroundColor: AppColors.secondary,
-              illustrationPath: 'assets/doctor.png', // Ilustrasi dokter untuk edukasi
+              illustrationPath:
+                  'assets/doctor.png', // Ilustrasi dokter untuk edukasi
             ),
           ),
           const SizedBox(height: 10),
@@ -69,7 +92,10 @@ class EducationPage extends StatelessWidget {
                         hintStyle: TextStyle(color: Colors.grey),
                         prefixIcon: Icon(Icons.search, color: Colors.grey),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 10,
+                        ),
                       ),
                     ),
                   ),
@@ -114,10 +140,8 @@ class EducationPage extends StatelessWidget {
         ],
       ),
       bottomNavigationBar: BottomNavV1(
-        selectedIndex: 1,
-        onItemTapped: (index) {
-          // TODO: Tambahkan logika navigasi untuk BottomNavV2 di sini
-        },
+        selectedIndex: _selectedIndex,
+        onItemTapped: _onItemTapped,
       ),
     );
   }

@@ -28,10 +28,17 @@ class BottomNavV1 extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          IconButton(
-            icon: const Icon(Icons.home_outlined, size: 30),
-            color: selectedIndex == 0 ? AppColors.secondary : Colors.grey,
-            onPressed: () => onItemTapped(0),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: selectedIndex == 0 ? AppColors.secondary : Colors.transparent,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: Icon(Icons.home_outlined, size: 30),
+              color: selectedIndex == 0 ? Colors.white : Colors.grey,
+              onPressed: () => onItemTapped(0),
+            ),
           ),
           
           Container(
@@ -47,10 +54,17 @@ class BottomNavV1 extends StatelessWidget {
             ),
           ),
           
-          IconButton(
-            icon: const Icon(Icons.person_outline, size: 30),
-            color: selectedIndex == 2 ? AppColors.secondary : Colors.grey,
-            onPressed: () => onItemTapped(2),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: selectedIndex == 2 ? AppColors.secondary : Colors.transparent,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: Icon(Icons.person_outline, size: 30),
+              color: selectedIndex == 2 ? Colors.white : Colors.grey,
+              onPressed: () => onItemTapped(2),
+            ),
           ),
         ],
       ),

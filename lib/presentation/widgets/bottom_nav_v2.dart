@@ -29,19 +29,34 @@ class BottomNavV2 extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           // Home (Indeks 0)
-          IconButton(
-            icon: const Icon(Icons.home_outlined, size: 30),
-            color: selectedIndex == 0 ? AppColors.secondary : Colors.grey,
-            onPressed: () => onItemTapped(0),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: selectedIndex == 0 ? AppColors.secondary : Colors.transparent,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: Icon(Icons.home_outlined, size: 30),
+              color: selectedIndex == 0 ? Colors.white : Colors.grey,
+              onPressed: () => onItemTapped(0),
+            ),
           ),
           
           // Edukasi (Indeks 1)
-          IconButton(
-            icon: const Icon(Icons.menu_book_outlined, size: 30),
-            color: selectedIndex == 1 ? AppColors.secondary : Colors.grey,
-            onPressed: () => onItemTapped(1),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: selectedIndex == 1 ? AppColors.secondary : Colors.transparent,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: Icon(Icons.menu_book_outlined, size: 30),
+              color: selectedIndex == 1 ? Colors.white : Colors.grey,
+              onPressed: () => onItemTapped(1),
+            ),
           ),
           
+          // Kuis (Indeks 2) - Dilingkari
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -49,7 +64,7 @@ class BottomNavV2 extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: Icon(selectedIndex == 2 ? Icons.help_outline : Icons.person_outline, size: 30),
+              icon: Icon(Icons.help_outline, size: 30),
               color: selectedIndex == 2 ? Colors.white : Colors.grey,
               onPressed: () => onItemTapped(2),
             ),

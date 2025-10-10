@@ -3,9 +3,31 @@ import 'package:tirtha_app/presentation/themes/color.dart';
 import 'package:tirtha_app/presentation/widgets/bottom_nav_v1.dart';
 import 'package:tirtha_app/presentation/widgets/top_bar.dart';
 import 'package:tirtha_app/presentation/widgets/info_card.dart';
+import 'package:tirtha_app/routes/app_routes.dart';
 
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  int _selectedIndex = 2;
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    if (index == 0) {
+      
+    } else if (index == 1) {
+      Navigator.pushNamed(context, AppRoutes.listEducation);
+    } else if (index == 2) {
+      // Tetap di halaman ini
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,10 +164,8 @@ class ProfilePage extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: BottomNavV1(
-        selectedIndex: 2,
-        onItemTapped: (index) {
-          
-        },
+        selectedIndex: _selectedIndex,
+        onItemTapped: _onItemTapped,
       ),
     );
   }

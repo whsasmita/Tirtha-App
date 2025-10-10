@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
         AppRoutes.about: (context) => const AboutPage(),
         AppRoutes.createEducation: (context) => const CreateEducationPage(),
         AppRoutes.createQuiz: (context) => const CreateQuizPage(),
-        AppRoutes.listEducation: (context) => const EducationPage(),
+        AppRoutes.listEducation: (context) => const EducationListPage(),
         AppRoutes.listQuiz: (context) => const QuizPage(),
       },
     );
