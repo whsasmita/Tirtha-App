@@ -5,10 +5,22 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
   const TopBar({super.key});
 
   void _showMenuDialog(BuildContext context) {
-    showDialog(
+    showGeneralDialog(
       context: context,
-      builder: (BuildContext context) {
+      barrierDismissible: true,
+      barrierLabel: '',
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation1, animation2) {
         return const AppMenuDialog();
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: SizeTransition(
+            sizeFactor: animation,
+            child: child,
+          ),
+        );
       },
     );
   }
