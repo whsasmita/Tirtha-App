@@ -64,7 +64,7 @@ class LoginPage extends StatelessWidget {
             AppButton(
               text: 'MASUK',
               onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.educationDashboard);
+                Navigator.pushNamed(context, AppRoutes.home);
               },
             ),
             const SizedBox(height: 16),

@@ -70,7 +70,7 @@ class RegisterPage extends StatelessWidget {
             AppButton(
               text: 'DAFTAR',
               onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.login);
+                Navigator.pushNamed(context, AppRoutes.home);
               },
             ),
             const SizedBox(height: 16),

@@ -42,9 +42,63 @@ class _HomePageState extends State<HomePage> {
       'image': 'assets/IconDoctor.png',
       'url': 'https://www.youtube.com/watch?v=youtube_link_2',
     },
+    {
+      'title': 'Komunikasi & Edukasi Penting Bagi Masyarakat',
+      'image': 'assets/IconDoctor.png',
+      'url': 'https://www.youtube.com/watch?v=youtube_link_1',
+    },
+    {
+      'title': 'Pentingnya Kepatuhan Cairan dalam Hemodialisis',
+      'image': 'assets/IconDoctor.png',
+      'url': 'https://www.youtube.com/watch?v=youtube_link_2',
+    },
+    {
+      'title': 'Komunikasi & Edukasi Penting Bagi Masyarakat',
+      'image': 'assets/IconDoctor.png',
+      'url': 'https://www.youtube.com/watch?v=youtube_link_1',
+    },
+    {
+      'title': 'Pentingnya Kepatuhan Cairan dalam Hemodialisis',
+      'image': 'assets/IconDoctor.png',
+      'url': 'https://www.youtube.com/watch?v=youtube_link_2',
+    },
+    {
+      'title': 'Komunikasi & Edukasi Penting Bagi Masyarakat',
+      'image': 'assets/IconDoctor.png',
+      'url': 'https://www.youtube.com/watch?v=youtube_link_1',
+    },
+    {
+      'title': 'Pentingnya Kepatuhan Cairan dalam Hemodialisis',
+      'image': 'assets/IconDoctor.png',
+      'url': 'https://www.youtube.com/watch?v=youtube_link_2',
+    },
   ];
 
   final List<Map<String, String>> quizItems = const [
+    {
+      'title': 'Kuis Tirtha tentang penyakit tubuh dan cairan',
+      'image': 'assets/quiz.jpg',
+    },
+    {
+      'title': 'Kuis Tirtha tentang kesehatan ginjal',
+      'image': 'assets/quiz.jpg',
+    },
+    {
+      'title': 'Kuis Tirtha tentang penyakit tubuh dan cairan',
+      'image': 'assets/quiz.jpg',
+    },
+    {
+      'title': 'Kuis Tirtha tentang kesehatan ginjal',
+      'image': 'assets/quiz.jpg',
+    },
+    {
+      'title': 'Kuis Tirtha tentang penyakit tubuh dan cairan',
+      'image': 'assets/quiz.jpg',
+    },
+    {
+      'title': 'Kuis Tirtha tentang kesehatan ginjal',
+      'image': 'assets/quiz.jpg',
+    },
     {
       'title': 'Kuis Tirtha tentang penyakit tubuh dan cairan',
       'image': 'assets/quiz.jpg',
@@ -151,8 +205,7 @@ class _HomePageState extends State<HomePage> {
                     icon: Icons.monitor_heart_outlined,
                     title: 'Pantau\nTubuh',
                     onTap: () {
-                      print('Pantau Tubuh clicked');
-                      // Navigator.pushNamed(context, AppRoutes.pantauTubuh);
+                      Navigator.pushNamed(context, AppRoutes.monitoring);
                     },
                   ),
                   MenuHeaderItem(
@@ -166,8 +219,7 @@ class _HomePageState extends State<HomePage> {
                     icon: Icons.alarm,
                     title: 'Pengingat',
                     onTap: () {
-                      print('Pengingat clicked');
-                      // Navigator.pushNamed(context, AppRoutes.pengingat);
+                      Navigator.pushNamed(context, AppRoutes.reminder);
                     },
                   ),
                   MenuHeaderItem(
@@ -330,8 +382,7 @@ class _HomePageState extends State<HomePage> {
                 backgroundColor: const Color(0xFFFF9800),
                 buttonColor: const Color(0xFF4CAF50),
                 onButtonPressed: () {
-                  print('Buat Pengingat clicked');
-                  // Navigator.pushNamed(context, AppRoutes.pengingat);
+                  Navigator.pushNamed(context, AppRoutes.reminder);
                 },
                 illustration: Image.asset(
                   'assets/alarm.png',

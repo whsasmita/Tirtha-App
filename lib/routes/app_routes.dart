@@ -14,14 +14,15 @@ class AppRoutes {
 
   // Monitoring
   static const String monitoring = '/monitoring';
+
   static const String complaintMonitoring = '/monitoring/complaints';
   static const String createComplaintMonitoring = '/monitoring/complaints/create';
 
-  static const String fluidMonitoring = '/monitoring/fluid';
-  static const String createFluidMonitoring = '/monitoring/fluid/create';
-
   static const String hemodialysisMonitoring = '/monitoring/hemodialysis';
   static const String createHemodialysisMonitoring = '/monitoring/hemodialysis/create';
+
+  static const String fluidMonitoring = '/monitoring/fluid';
+  static const String createFluidMonitoring = '/monitoring/fluid/create';
 
   // Reminder
   static const String reminder = '/reminder';
