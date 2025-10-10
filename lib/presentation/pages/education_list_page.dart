@@ -34,17 +34,17 @@ class _EducationDashboardPageState extends State<EducationListPage> {
   final List<Map<String, String>> educationItems = const [
     {
       'title': 'Komunikasi & Edukasi Penting Bagi Masyarakat',
-      'image': 'assets/thumbnail_education.png',
+      'image': 'assets/IconDoctor.png',
       'url': 'https://www.youtube.com/watch?v=youtube_link_1',
     },
     {
       'title': 'Pentingnya Kepatuhan Cairan dalam Hemodialisis',
-      'image': 'assets/thumbnail_education.png',
+      'image': 'assets/IconDoctor.png',
       'url': 'https://www.youtube.com/watch?v=youtube_link_2',
     },
     {
       'title': 'Gaya Hidup Sehat untuk Pasien Gagal Ginjal',
-      'image': 'assets/thumbnail_education.png',
+      'image': 'assets/IconDoctor.png',
       'url': 'https://www.youtube.com/watch?v=youtube_link_3',
     },
   ];
