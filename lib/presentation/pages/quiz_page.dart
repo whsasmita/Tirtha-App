@@ -29,39 +29,59 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
     }
   }
 
-  Widget _buildQuizTable() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              color: Colors.grey.shade100,
-            ),
-            child: const IntrinsicHeight(
-              child: Row(
-                children: [
-                  SizedBox(width: 40, child: Text('No', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold))),
-                  Expanded(child: Padding(padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0), child: Text('Nama', style: TextStyle(fontWeight: FontWeight.bold)))),
-                  SizedBox(width: 100, child: Text('Link', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold))),
-                ],
+  Widget _buildEducationTableItem(
+    BuildContext context,
+    String no,
+    String name,
+    String link,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            SizedBox(width: 40, child: Text(no, textAlign: TextAlign.center)),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(name),
               ),
             ),
-          ),
-          Container(
-            decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300)),
-            child: const IntrinsicHeight(
-              child: Row(
-                children: [
-                  SizedBox(width: 40, child: Text('1', textAlign: TextAlign.center)),
-                  Expanded(child: Padding(padding: EdgeInsets.all(8.0), child: Text('Edukasi 1'))),
-                  SizedBox(width: 100, child: Text('Klik disini', style: TextStyle(color: AppColors.secondary, decoration: TextDecoration.underline))),
-                ],
+            Container(
+              width: 100,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8.0,
+                vertical: 8.0,
+              ),
+              child: Text(
+                link,
+                style: const TextStyle(
+                  color: Colors.black,
+                  decorationColor: AppColors.secondary,
+                ),
               ),
             ),
-          ),
-        ],
+
+            IconButton(
+              icon: const Icon(Icons.edit, size: 20, color: AppColors.primary),
+              onPressed: () {
+                // TODO: Logika untuk mengedit item
+              },
+            ),
+            IconButton(
+              icon: const Icon(
+                Icons.delete_outline,
+                size: 20,
+                color: Colors.red,
+              ),
+              onPressed: () {
+                // TODO: Logika untuk menghapus item
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -105,7 +125,8 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
               ),
             ),
             const SizedBox(height: 20),
-            _buildQuizTable(),
+             _buildEducationTableItem(context, 'No', 'Nama', 'Link'),
+            _buildEducationTableItem(context, '1', 'Quiz 1', 'Klik disini'),
             const SizedBox(height: 80),
           ],
         ),
@@ -113,6 +134,13 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
       bottomNavigationBar: BottomNavV2(
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(context, AppRoutes.createQuiz);
+        },
+        backgroundColor: AppColors.secondary,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

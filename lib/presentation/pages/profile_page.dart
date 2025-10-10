@@ -118,26 +118,31 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
             const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text('Tentang Kami', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Divider(),
-                  Text('V 1.0'),
-                ],
+            GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, AppRoutes.about); // Navigasi ke AboutPage
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text('Tentang Kami', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Divider(),
+                    Text('V 1.0'),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 24),

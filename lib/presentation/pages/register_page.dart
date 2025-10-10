@@ -18,7 +18,7 @@ class RegisterPage extends StatelessWidget {
           children: [
             const SizedBox(height: 80),
 
-            Center(child: Image.asset('assets/logoTirthaApp.png', height: 280)),
+            Center(child: Image.asset('assets/logo_tirtha_app.png', height: 280)),
             const SizedBox(height: 5),
 
             const Text(

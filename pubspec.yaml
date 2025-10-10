@@ -68,13 +68,14 @@ flutter:
   #   - images/a_dot_ham.jpeg
 
   assets:
-    - assets/IconDoctor.png
-    - assets/logoTirthaApp.png
+    - assets/icon_doctor.png
+    - assets/logo_tirtha_app.png
     - assets/doctor.png
     - assets/heart.png
     - assets/pil.png
     - assets/temperature.png
     - assets/quiz.jpg
+    - assets/thumbnail_yt.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

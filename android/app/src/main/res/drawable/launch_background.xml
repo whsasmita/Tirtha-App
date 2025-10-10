@@ -5,6 +5,6 @@
     <item>
         <bitmap
             android:gravity="center"
-            android:src="@drawable/logoTirthaApp" />
+            android:src="@drawable/logo_tirtha_app" />
     </item>
 </layer-list>

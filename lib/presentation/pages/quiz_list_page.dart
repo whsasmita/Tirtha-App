@@ -62,7 +62,7 @@ class QuizPage extends StatelessWidget {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: AppColors.secondary, // Warna hijau
+                    color: AppColors.secondary, 
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: IconButton(
@@ -81,7 +81,7 @@ class QuizPage extends StatelessWidget {
                 crossAxisCount: 2,
                 crossAxisSpacing: 16.0,
                 mainAxisSpacing: 16.0,
-                childAspectRatio: 0.7,
+                childAspectRatio: 1.4,
               ),
               itemCount: quizItems.length * 3,
               itemBuilder: (context, index) {

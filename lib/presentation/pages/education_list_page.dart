@@ -23,7 +23,7 @@ class _EducationDashboardPageState extends State<EducationListPage> {
     });
 
     if (index == 0) {
-
+      
     } else if (index == 1) {
       // Tetap di halaman ini
     } else if (index == 2) {
@@ -33,19 +33,19 @@ class _EducationDashboardPageState extends State<EducationListPage> {
 
   final List<Map<String, String>> educationItems = const [
     {
-      'title': 'Komunikasi & Edukasi Penting Bagi Masyarakat',
-      'image': 'assets/IconDoctor.png',
-      'url': 'https://www.youtube.com/watch?v=youtube_link_1',
+      'title': 'Edukasi 1',
+      'image': 'assets/thumbnail_yt.png',
+      'url': 'https://youtu.be/GNbFOhuOjlY?si=Ugz_N07ia7LyFR5H',
     },
     {
-      'title': 'Pentingnya Kepatuhan Cairan dalam Hemodialisis',
-      'image': 'assets/IconDoctor.png',
-      'url': 'https://www.youtube.com/watch?v=youtube_link_2',
+      'title': 'Edukasi 2',
+      'image': 'assets/thumbnail_yt.png',
+      'url': 'https://youtu.be/GNbFOhuOjlY?si=Ugz_N07ia7LyFR5H',
     },
     {
-      'title': 'Gaya Hidup Sehat untuk Pasien Gagal Ginjal',
-      'image': 'assets/IconDoctor.png',
-      'url': 'https://www.youtube.com/watch?v=youtube_link_3',
+      'title': 'Edukasi 3',
+      'image': 'assets/thumbnail_yt.png',
+      'url': 'https://youtu.be/GNbFOhuOjlY?si=Ugz_N07ia7LyFR5H',
     },
   ];
 
@@ -71,7 +71,7 @@ class _EducationDashboardPageState extends State<EducationListPage> {
               title: 'EDUKASI KESEHATAN',
               backgroundColor: AppColors.secondary,
               illustrationPath:
-                  'assets/doctor.png', // Ilustrasi dokter untuk edukasi
+                  'assets/doctor.png',
             ),
           ),
           const SizedBox(height: 10),
@@ -124,7 +124,7 @@ class _EducationDashboardPageState extends State<EducationListPage> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 16.0,
                 mainAxisSpacing: 16.0,
-                childAspectRatio: 0.7,
+                childAspectRatio: 1.4,
               ),
               itemCount: educationItems.length * 3,
               itemBuilder: (context, index) {

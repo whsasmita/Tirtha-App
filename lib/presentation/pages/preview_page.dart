@@ -20,7 +20,7 @@ class PreviewPage extends StatelessWidget {
 
             Center(
               child: Image.asset(
-                'assets/IconDoctor.png',
+                'assets/icon_doctor.png',
                 height: screenHeight * 0.4,
                 fit: BoxFit.contain,
               ),
