@@ -1,6 +1,7 @@
 // lib/main.dart
 
 import 'package:flutter/material.dart';
+import 'package:tirtha_app/presentation/pages/home_page.dart';
 import 'package:tirtha_app/routes/app_routes.dart';
 import 'package:tirtha_app/presentation/pages/login_page.dart';
 import 'package:tirtha_app/presentation/pages/register_page.dart';
@@ -28,6 +29,7 @@ class MyApp extends StatelessWidget {
       initialRoute: AppRoutes.preview, // Halaman awal
       routes: {
         AppRoutes.preview: (context) => const PreviewPage(),
+        AppRoutes.home: (context) => const HomePage(),
         AppRoutes.login: (context) => const LoginPage(),
         AppRoutes.register: (context) => const RegisterPage(),
         AppRoutes.educationDashboard: (context) => const EducationDashboardPage(),

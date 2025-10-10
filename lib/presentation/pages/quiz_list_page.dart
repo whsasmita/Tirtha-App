@@ -4,6 +4,7 @@ import 'package:tirtha_app/presentation/widgets/top_bar.dart';
 import 'package:tirtha_app/presentation/widgets/bottom_nav_v1.dart';
 import 'package:tirtha_app/presentation/widgets/grid_item_card.dart';
 import 'package:tirtha_app/presentation/widgets/home_header.dart';
+import 'package:tirtha_app/routes/app_routes.dart';
 
 class QuizPage extends StatelessWidget {
   const QuizPage({Key? key}) : super(key: key);
@@ -52,7 +53,8 @@ class QuizPage extends StatelessWidget {
                         hintStyle: TextStyle(color: Colors.grey),
                         prefixIcon: Icon(Icons.search, color: Colors.grey),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+                        contentPadding:
+                            EdgeInsets.symmetric(vertical: 14, horizontal: 10),
                       ),
                     ),
                   ),
@@ -89,7 +91,10 @@ class QuizPage extends StatelessWidget {
                 return GridItemCard(
                   imageUrl: item['image']!,
                   title: item['title']!,
-                  onTap: null,
+                  onTap: () {
+                    // Tambahkan navigasi ke halaman detail kuis
+                    // Navigator.pushNamed(context, AppRoutes.detailQuiz);
+                  },
                 );
               },
             ),
@@ -97,9 +102,16 @@ class QuizPage extends StatelessWidget {
         ],
       ),
       bottomNavigationBar: BottomNavV1(
-        selectedIndex: 2,
+        selectedIndex: 0,
         onItemTapped: (index) {
-          // TODO: Tambahkan logika navigasi untuk BottomNavV2 di sini
+          if (index == 0) {
+            Navigator.pushNamedAndRemoveUntil(
+                context, AppRoutes.home, (route) => false);
+          } else if (index == 1) {
+            Navigator.pushNamed(context, AppRoutes.listEducation);
+          } else if (index == 2) {
+            Navigator.pushNamed(context, AppRoutes.profile);
+          }
         },
       ),
     );

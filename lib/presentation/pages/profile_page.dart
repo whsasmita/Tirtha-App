@@ -21,7 +21,7 @@ class _ProfilePageState extends State<ProfilePage> {
     });
 
     if (index == 0) {
-      
+      Navigator.pushNamed(context, AppRoutes.home);
     } else if (index == 1) {
       Navigator.pushNamed(context, AppRoutes.listEducation);
     } else if (index == 2) {

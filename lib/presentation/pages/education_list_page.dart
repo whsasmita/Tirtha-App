@@ -23,7 +23,7 @@ class _EducationDashboardPageState extends State<EducationListPage> {
     });
 
     if (index == 0) {
-
+      Navigator.pushNamed(context, AppRoutes.home);
     } else if (index == 1) {
       // Tetap di halaman ini
     } else if (index == 2) {

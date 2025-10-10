@@ -75,6 +75,9 @@ flutter:
     - assets/pil.png
     - assets/temperature.png
     - assets/quiz.jpg
+    - assets/alarm.png
+    - assets/medical_history.png
+    - assets/reminder_section.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -34,8 +34,9 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       backgroundColor: Colors.white,
       elevation: 0,
+      scrolledUnderElevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.tablet_android, color: Colors.black, size: 28),
+        icon: const Icon(Icons.splitscreen, color: Colors.black, size: 28, rotation: 90),
         onPressed: () {
           _showMenuDialog(context);
         },
