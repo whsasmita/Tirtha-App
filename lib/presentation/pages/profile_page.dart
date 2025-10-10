@@ -120,7 +120,7 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 24),
             GestureDetector(
               onTap: () {
-                Navigator.pushNamed(context, AppRoutes.about); // Navigasi ke AboutPage
+                Navigator.pushNamed(context, AppRoutes.about);
               },
               child: Container(
                 padding: const EdgeInsets.all(16.0),

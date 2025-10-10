@@ -67,6 +67,19 @@ class RegisterPage extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
+            const Text(
+              'Konfirmasi Password',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const AppTextField(
+              hintText: 'Masukkan password',
+              obscureText: true,
+              prefixIcon: Icon(Icons.lock_outline, color: AppColors.primary),
+              suffixIcon: Icon(Icons.visibility, color: AppColors.primary),
+            ),
+            const SizedBox(height: 24),
+
             AppButton(
               text: 'DAFTAR',
               onPressed: () {
