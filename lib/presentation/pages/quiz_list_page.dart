@@ -6,11 +6,8 @@ import 'package:tirtha_app/presentation/widgets/bottom_nav_v1.dart';
 import 'package:tirtha_app/presentation/widgets/grid_item_card.dart';
 import 'package:tirtha_app/presentation/widgets/home_header.dart';
 import 'package:tirtha_app/routes/app_routes.dart';
-<<<<<<< HEAD
-=======
 import 'package:tirtha_app/core/services/quiz_service.dart';
 import 'package:tirtha_app/data/models/quiz_model.dart';
->>>>>>> yudi
 
 class QuizListPage extends StatefulWidget {
   const QuizListPage({Key? key}) : super(key: key);
@@ -115,27 +112,6 @@ class _QuizListPageState extends State<QuizListPage> {
           const SizedBox(height: 10),
           
           Expanded(
-<<<<<<< HEAD
-            child: GridView.builder(
-              padding: const EdgeInsets.all(16.0),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16.0,
-                mainAxisSpacing: 16.0,
-                childAspectRatio: 1.4,
-              ),
-              itemCount: quizItems.length * 3,
-              itemBuilder: (context, index) {
-                final item = quizItems[index % quizItems.length];
-                return GridItemCard(
-                  imageUrl: item['image']!,
-                  title: item['title']!,
-                  onTap: () {
-                    // Tambahkan navigasi ke halaman detail kuis
-                    // Navigator.pushNamed(context, AppRoutes.detailQuiz);
-                  },
-                );
-=======
             child: FutureBuilder<List<QuizModel>>(
               future: _quizFuture,
               builder: (context, snapshot) {
@@ -171,29 +147,14 @@ class _QuizListPageState extends State<QuizListPage> {
                 } else {
                   return const Center(child: Text('Belum ada data kuis.'));
                 }
->>>>>>> yudi
               },
             ),
           ),
         ],
       ),
       bottomNavigationBar: BottomNavV1(
-<<<<<<< HEAD
-        selectedIndex: 0,
-        onItemTapped: (index) {
-          if (index == 0) {
-            Navigator.pushNamedAndRemoveUntil(
-                context, AppRoutes.home, (route) => false);
-          } else if (index == 1) {
-            Navigator.pushNamed(context, AppRoutes.listEducation);
-          } else if (index == 2) {
-            Navigator.pushNamed(context, AppRoutes.profile);
-          }
-        },
-=======
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,
->>>>>>> yudi
       ),
     );
   }

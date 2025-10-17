@@ -33,11 +33,7 @@ class _ProfilePageState extends State<ProfilePage> {
     });
 
     if (index == 0) {
-<<<<<<< HEAD
       Navigator.pushNamed(context, AppRoutes.home);
-=======
-      // Navigasi ke Dashboard atau Home
->>>>>>> yudi
     } else if (index == 1) {
       Navigator.pushNamed(context, AppRoutes.listEducation);
     } else if (index == 2) {

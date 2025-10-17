@@ -154,15 +154,8 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             const SizedBox(height: 24),
             AppButton(
-<<<<<<< HEAD
-              text: 'DAFTAR',
-              onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.home);
-              },
-=======
               text: _isLoading ? 'Loading...' : 'DAFTAR',
               onPressed: _handleRegister,
->>>>>>> yudi
             ),
             const SizedBox(height: 16),
 

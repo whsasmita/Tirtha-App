@@ -33,11 +33,7 @@ class _EducationDashboardPageState extends State<EducationListPage> {
     });
 
     if (index == 0) {
-<<<<<<< HEAD
       Navigator.pushNamed(context, AppRoutes.home);
-=======
-      // TODO: Navigasi ke halaman home
->>>>>>> yudi
     } else if (index == 1) {
       // Tetap di halaman ini
     } else if (index == 2) {

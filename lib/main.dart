@@ -43,19 +43,18 @@ class MyApp extends StatelessWidget {
         // Auth
         AppRoutes.login: (context) => const LoginPage(),
         AppRoutes.register: (context) => const RegisterPage(),
-<<<<<<< HEAD
         AppRoutes.profile: (context) => const ProfilePage(),
         AppRoutes.about: (context) => const AboutPage(),
 
         // Education & Quiz Dashboard
         AppRoutes.educationDashboard: (context) => const EducationDashboardPage(),
-        AppRoutes.createEducation: (context) => const CreateEducationPage(),
         AppRoutes.quizDashboard: (context) => const QuizDashboardPage(),
-        AppRoutes.createQuiz: (context) => const CreateQuizPage(),
+        AppRoutes.createEducation: (context) => const UpsertEducationPage(),
+        AppRoutes.createQuiz: (context) => const UpsertQuizPage(),
 
         // List Pages
         AppRoutes.listEducation: (context) => const EducationListPage(),
-        AppRoutes.listQuiz: (context) => const QuizPage(),
+        AppRoutes.listQuiz: (context) => const QuizDashboardPage(),
 
         // Reminder
         AppRoutes.reminder: (context) => const ReminderPage(),
@@ -63,26 +62,12 @@ class MyApp extends StatelessWidget {
 
         // Monitoring
         AppRoutes.monitoring: (context) => const MonitoringPage(),
-
         AppRoutes.complaintMonitoring: (context) => const ComplaintMonitoringPage(),
         AppRoutes.createComplaintMonitoring: (context) => const CreateComplaintMonitoring(),
-
         AppRoutes.hemodialysisMonitoring: (context) => const HemodialysisMonitoringPage(),
         AppRoutes.createHemodialysisMonitoring: (context) => const CreateHemodialysisMonitoring(),
-
         AppRoutes.fluidMonitoring: (context) => const FluidMonitoringPage(),
         AppRoutes.createFluidMonitoring: (context) => const CreateFluidMonitoringPage(),
-=======
-        AppRoutes.educationDashboard:
-            (context) => const EducationDashboardPage(),
-        AppRoutes.quizDashboard: (context) => const QuizDashboardPage(),
-        AppRoutes.profile: (context) => const ProfilePage(),
-        AppRoutes.about: (context) => const AboutPage(),
-        AppRoutes.createEducation: (context) => const UpsertEducationPage(),
-        AppRoutes.createQuiz: (context) => const UpsertQuizPage(),
-        AppRoutes.listEducation: (context) => const EducationListPage(),
-        AppRoutes.listQuiz: (context) => const QuizListPage(),
->>>>>>> yudi
       },
     );
   }

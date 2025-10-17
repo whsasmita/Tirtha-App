@@ -36,11 +36,7 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
-<<<<<<< HEAD
-        icon: const Icon(Icons.splitscreen, color: Colors.black, size: 28),
-=======
         icon: const Icon(Icons.list, color: Colors.black, size: 28),
->>>>>>> yudi
         onPressed: () {
           _showMenuDialog(context);
         },

@@ -122,15 +122,8 @@ class _LoginPageState extends State<LoginPage> {
               ),
             const SizedBox(height: 24),
             AppButton(
-<<<<<<< HEAD
-              text: 'MASUK',
-              onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.home);
-              },
-=======
               text: _isLoading ? 'Loading...' : 'MASUK',
               onPressed: _handleLogin, 
->>>>>>> yudi
             ),
             const SizedBox(height: 16),
             Row(
