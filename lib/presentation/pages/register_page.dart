@@ -1,11 +1,73 @@
 import 'package:flutter/material.dart';
 import 'package:tirtha_app/presentation/widgets/app_button.dart';
 import 'package:tirtha_app/presentation/widgets/app_text_field.dart';
+import 'package:tirtha_app/presentation/widgets/password_text_field.dart';
 import 'package:tirtha_app/presentation/themes/color.dart';
 import 'package:tirtha_app/routes/app_routes.dart';
+import 'package:tirtha_app/core/services/auth_service.dart';
 
-class RegisterPage extends StatelessWidget {
+class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
+
+  @override
+  _RegisterPageState createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _konfirmasiPasswordController =
+      TextEditingController();
+
+  final AuthService _authService = AuthService();
+
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _konfirmasiPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleRegister() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    if (_passwordController.text != _konfirmasiPasswordController.text) {
+      setState(() {
+        _errorMessage = "Konfirmasi Password Tidak Sama";
+        _isLoading = false;
+      });
+      return;
+    } else {
+      try {
+        final name = _nameController.text.trim();
+        final email = _emailController.text.trim();
+        final password = _passwordController.text.trim();
+
+        await _authService.register(name, email, password);
+
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, AppRoutes.login);
+        }
+      } catch (e) {
+        setState(() {
+          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        });
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +80,9 @@ class RegisterPage extends StatelessWidget {
           children: [
             const SizedBox(height: 80),
 
-            Center(child: Image.asset('assets/logo_tirtha_app.png', height: 280)),
+            Center(
+              child: Image.asset('assets/logo_tirtha_app.png', height: 280),
+            ),
             const SizedBox(height: 5),
 
             const Text(
@@ -26,8 +90,9 @@ class RegisterPage extends StatelessWidget {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const AppTextField(
+            AppTextField(
               hintText: 'Masukkan nama lengkap anda',
+              controller: _nameController,
               prefixIcon: Icon(Icons.person_outline, color: AppColors.primary),
             ),
             const SizedBox(height: 24),
@@ -37,41 +102,67 @@ class RegisterPage extends StatelessWidget {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const AppTextField(
+            AppTextField(
               hintText: 'Masukkan email anda',
+              controller: _emailController,
               prefixIcon: Icon(Icons.email_outlined, color: AppColors.primary),
             ),
             const SizedBox(height: 24),
 
-            const Text(
-              'No HP (WhatsApp)',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            const AppTextField(
-              hintText: 'Masukkan nomor telepon',
-              prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary),
-            ),
-            const SizedBox(height: 24),
-
+            // const Text(
+            //   'No HP (WhatsApp)',
+            //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            // ),
+            // const SizedBox(height: 8),
+            // AppTextField(
+            //   hintText: 'Masukkan nomor telepon',
+            //   controller: _numberController,
+            //   prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary),
+            // ),
+            // const SizedBox(height: 24),
             const Text(
               'Password',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const AppTextField(
-              hintText: 'Masukkan password',
-              obscureText: true,
-              prefixIcon: Icon(Icons.lock_outline, color: AppColors.primary),
-              suffixIcon: Icon(Icons.visibility, color: AppColors.primary),
+            PasswordTextField(
+              hintText: 'Password',
+              controller: _passwordController,
+              prefixIcon: Icon(Icons.lock),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Konfirmasi Password',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            PasswordTextField(
+              hintText: 'Konfirmasi Password',
+              controller: _konfirmasiPasswordController,
+              prefixIcon: Icon(Icons.lock),
             ),
             const SizedBox(height: 24),
 
+            if (_errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Text(
+                  _errorMessage!,
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            const SizedBox(height: 24),
             AppButton(
+<<<<<<< HEAD
               text: 'DAFTAR',
               onPressed: () {
                 Navigator.pushNamed(context, AppRoutes.home);
               },
+=======
+              text: _isLoading ? 'Loading...' : 'DAFTAR',
+              onPressed: _handleRegister,
+>>>>>>> yudi
             ),
             const SizedBox(height: 16),
 

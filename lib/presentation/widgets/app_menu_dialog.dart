@@ -1,12 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:tirtha_app/presentation/themes/color.dart';
 import 'package:tirtha_app/routes/app_routes.dart';
+import 'package:tirtha_app/core/services/auth_service.dart';
+import 'package:tirtha_app/data/models/user_model.dart';
 
-class AppMenuDialog extends StatelessWidget {
+class AppMenuDialog extends StatefulWidget {
   const AppMenuDialog({super.key});
 
+  @override
+  State<AppMenuDialog> createState() => _AppMenuDialogState();
+}
+
+class _AppMenuDialogState extends State<AppMenuDialog> {
+  final AuthService _authService = AuthService();
+  final AuthService _profileService = AuthService();
+
+  late Future<UserModel> _userProfileFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _userProfileFuture = _profileService.getUserProfile();
+  }
+
   Widget _buildMenuItem(
-      BuildContext context, String title, String route, Color color) {
+    BuildContext context,
+    String title,
+    String route,
+    Color color,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: GestureDetector(
@@ -19,10 +41,7 @@ class AppMenuDialog extends StatelessWidget {
             Container(
               width: 10,
               height: 10,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: 12),
             Text(
@@ -60,44 +79,90 @@ class AppMenuDialog extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              const CircleAvatar(
-                radius: 30,
-                backgroundImage: AssetImage('assets/doctor.png'),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          FutureBuilder<UserModel>(
+            future: _userProfileFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(
+                  child: Text(
+                    'Gagal memuat profil: ${snapshot.error.toString()}',
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                );
+              } else if (snapshot.hasData) {
+                final user = snapshot.data!;
+                return Row(
                   children: [
-                    Text('Wahyu HS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    Text('wahyu@gmail.com', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                    const CircleAvatar(
+                      radius: 30,
+                      backgroundImage: AssetImage('assets/doctor.png'),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user.id.toString(),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            user.role ?? "Email Tidak Tersedia",
+                            style: const TextStyle(color: Colors.grey, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: const Icon(Icons.close, color: Colors.grey),
+                    ),
                   ],
-                ),
-              ),
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: const Icon(Icons.close, color: Colors.grey),
-              ),
-            ],
+                );
+              } else {
+                return const Center(child: Text('Data tidak tersedia'));
+              }
+            },
           ),
           const Divider(height: 30),
-          _buildMenuItem(context, 'Dashboard Edukasi', AppRoutes.educationDashboard, AppColors.secondary),
-          _buildMenuItem(context, 'Dashboard Kuis', AppRoutes.quizDashboard, AppColors.primary),
+          _buildMenuItem(
+            context,
+            'Dashboard Edukasi',
+            AppRoutes.educationDashboard,
+            AppColors.secondary,
+          ),
+          _buildMenuItem(
+            context,
+            'Dashboard Kuis',
+            AppRoutes.quizDashboard,
+            AppColors.primary,
+          ),
           const Divider(height: 30),
           SizedBox(
             height: 48,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pop(context);
-                // TODO: Tambahkan logika logout di sini
+                _authService.logout();
+                Navigator.pushNamedAndRemoveUntil(context, AppRoutes.preview, (route) => false);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-              child: const Text('KELUAR', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'KELUAR',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ],

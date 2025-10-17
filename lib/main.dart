@@ -1,5 +1,3 @@
-// lib/main.dart
-
 import 'package:flutter/material.dart';
 import 'package:tirtha_app/presentation/pages/home_page.dart';
 import 'package:tirtha_app/presentation/pages/monitoring/complaint/complaint_monitoring_page.dart';
@@ -23,8 +21,10 @@ import 'package:tirtha_app/presentation/pages/create_quiz_page.dart';
 import 'package:tirtha_app/presentation/pages/about_page.dart';
 import 'package:tirtha_app/presentation/pages/education_list_page.dart';
 import 'package:tirtha_app/presentation/pages/quiz_list_page.dart';
+import 'package:tirtha_app/core/services/app_client.dart';
 
 void main() {
+  ApiClient.init();
   runApp(const MyApp());
 }
 
@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
-    Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       initialRoute: AppRoutes.preview,
@@ -43,6 +43,7 @@ class MyApp extends StatelessWidget {
         // Auth
         AppRoutes.login: (context) => const LoginPage(),
         AppRoutes.register: (context) => const RegisterPage(),
+<<<<<<< HEAD
         AppRoutes.profile: (context) => const ProfilePage(),
         AppRoutes.about: (context) => const AboutPage(),
 
@@ -71,8 +72,18 @@ class MyApp extends StatelessWidget {
 
         AppRoutes.fluidMonitoring: (context) => const FluidMonitoringPage(),
         AppRoutes.createFluidMonitoring: (context) => const CreateFluidMonitoringPage(),
+=======
+        AppRoutes.educationDashboard:
+            (context) => const EducationDashboardPage(),
+        AppRoutes.quizDashboard: (context) => const QuizDashboardPage(),
+        AppRoutes.profile: (context) => const ProfilePage(),
+        AppRoutes.about: (context) => const AboutPage(),
+        AppRoutes.createEducation: (context) => const UpsertEducationPage(),
+        AppRoutes.createQuiz: (context) => const UpsertQuizPage(),
+        AppRoutes.listEducation: (context) => const EducationListPage(),
+        AppRoutes.listQuiz: (context) => const QuizListPage(),
+>>>>>>> yudi
       },
     );
   }
-
 }
