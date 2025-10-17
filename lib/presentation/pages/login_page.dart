@@ -1,11 +1,67 @@
 import 'package:flutter/material.dart';
 import 'package:tirtha_app/presentation/widgets/app_button.dart';
 import 'package:tirtha_app/presentation/widgets/app_text_field.dart';
+import 'package:tirtha_app/presentation/widgets/password_text_field.dart';
 import 'package:tirtha_app/presentation/themes/color.dart';
 import 'package:tirtha_app/routes/app_routes.dart';
+import 'package:tirtha_app/core/services/auth_service.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
+
+  @override
+  _LoginPageState createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  
+  final AuthService _authService = AuthService();
+  
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() {
+        _errorMessage = 'Email dan Password tidak boleh kosong.';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await _authService.login(email, password);
+
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, AppRoutes.educationDashboard);
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +80,10 @@ class LoginPage extends StatelessWidget {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const AppTextField(
+            AppTextField(
               hintText: 'Masukkan email / nomor telepon',
-              prefixIcon: Padding(
+              controller: _emailController,
+              prefixIcon: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.0),
                 child: Icon(Icons.person_outline, color: AppColors.primary),
               ),
@@ -37,17 +94,10 @@ class LoginPage extends StatelessWidget {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const AppTextField(
-              hintText: 'Masukkan password',
-              obscureText: true,
-              prefixIcon: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Icon(Icons.lock_outline, color: AppColors.primary),
-              ),
-              suffixIcon: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Icon(Icons.visibility, color: AppColors.primary),
-              ),
+            PasswordTextField(
+              hintText: 'Password',
+              controller: _passwordController,
+              prefixIcon: const Icon(Icons.lock),
             ),
             const SizedBox(height: 8),
             Align(
@@ -60,12 +110,20 @@ class LoginPage extends StatelessWidget {
                 ),
               ),
             ),
+           
+            if (_errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Text(
+                  _errorMessage!,
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             const SizedBox(height: 24),
             AppButton(
-              text: 'MASUK',
-              onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.educationDashboard);
-              },
+              text: _isLoading ? 'Loading...' : 'MASUK',
+              onPressed: _handleLogin, 
             ),
             const SizedBox(height: 16),
             Row(

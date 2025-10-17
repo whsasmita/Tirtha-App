@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:tirtha_app/presentation/themes/color.dart';
-import 'package:tirtha_app/presentation/widgets/top_bar.dart';
+import 'package:tirtha_app/presentation/widgets/top_bar_v2.dart';
 import 'package:tirtha_app/presentation/widgets/bottom_nav_v1.dart';
 import 'package:tirtha_app/presentation/widgets/grid_item_card.dart';
 import 'package:tirtha_app/presentation/widgets/home_header.dart';
 import 'package:tirtha_app/routes/app_routes.dart';
+import 'package:tirtha_app/core/services/education_service.dart'; // Service untuk mengambil data
+import 'package:tirtha_app/data/models/education_model.dart'; // Model data edukasi
 
 class EducationListPage extends StatefulWidget {
   const EducationListPage({super.key});
@@ -16,6 +18,14 @@ class EducationListPage extends StatefulWidget {
 
 class _EducationDashboardPageState extends State<EducationListPage> {
   int _selectedIndex = 1;
+  final EducationService _educationService = EducationService();
+  late Future<List<EducationModel>> _educationFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _educationFuture = _educationService.fetchAllEducations();
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -23,7 +33,7 @@ class _EducationDashboardPageState extends State<EducationListPage> {
     });
 
     if (index == 0) {
-      
+      // TODO: Navigasi ke halaman home
     } else if (index == 1) {
       // Tetap di halaman ini
     } else if (index == 2) {
@@ -31,30 +41,16 @@ class _EducationDashboardPageState extends State<EducationListPage> {
     }
   }
 
-  final List<Map<String, String>> educationItems = const [
-    {
-      'title': 'Edukasi 1',
-      'image': 'assets/thumbnail_yt.png',
-      'url': 'https://youtu.be/GNbFOhuOjlY?si=Ugz_N07ia7LyFR5H',
-    },
-    {
-      'title': 'Edukasi 2',
-      'image': 'assets/thumbnail_yt.png',
-      'url': 'https://youtu.be/GNbFOhuOjlY?si=Ugz_N07ia7LyFR5H',
-    },
-    {
-      'title': 'Edukasi 3',
-      'image': 'assets/thumbnail_yt.png',
-      'url': 'https://youtu.be/GNbFOhuOjlY?si=Ugz_N07ia7LyFR5H',
-    },
-  ];
-
-  void _launchURL(String url) async {
+  void _launchURL(String url, BuildContext context) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
-      print('Could not launch $url');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Tidak dapat membuka link: $url')),
+        );
+      }
     }
   }
 
@@ -62,7 +58,7 @@ class _EducationDashboardPageState extends State<EducationListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: const TopBar(),
+      appBar: const TopBarV2(),
       body: Column(
         children: [
           Padding(
@@ -70,8 +66,7 @@ class _EducationDashboardPageState extends State<EducationListPage> {
             child: HomeHeader(
               title: 'EDUKASI KESEHATAN',
               backgroundColor: AppColors.secondary,
-              illustrationPath:
-                  'assets/doctor.png',
+              illustrationPath: 'assets/doctor.png',
             ),
           ),
           const SizedBox(height: 10),
@@ -117,23 +112,44 @@ class _EducationDashboardPageState extends State<EducationListPage> {
             ),
           ),
           const SizedBox(height: 10),
+          
           Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(16.0),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16.0,
-                mainAxisSpacing: 16.0,
-                childAspectRatio: 1.4,
-              ),
-              itemCount: educationItems.length * 3,
-              itemBuilder: (context, index) {
-                final item = educationItems[index % educationItems.length];
-                return GridItemCard(
-                  imageUrl: item['image']!,
-                  title: item['title']!,
-                  onTap: () => _launchURL(item['url']!),
-                );
+            child: FutureBuilder<List<EducationModel>>(
+              future: _educationFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text('Gagal memuat edukasi: ${snapshot.error}', style: const TextStyle(color: Colors.red)),
+                    ),
+                  );
+                } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                  final educationList = snapshot.data!;
+                  return GridView.builder(
+                    padding: const EdgeInsets.all(16.0),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16.0,
+                      mainAxisSpacing: 16.0,
+                      childAspectRatio: 1.4,
+                    ),
+                    itemCount: educationList.length,
+                    itemBuilder: (context, index) {
+                      final item = educationList[index];
+                      return GridItemCard(
+                        
+                        title: item.name, 
+                        imageUrl: "assets/doctor.png",
+                        onTap: () => _launchURL(item.url, context),
+                      );
+                    },
+                  );
+                } else {
+                  return const Center(child: Text('Belum ada data edukasi.'));
+                }
               },
             ),
           ),
