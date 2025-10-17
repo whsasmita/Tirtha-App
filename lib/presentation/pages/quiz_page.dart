@@ -78,7 +78,6 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
           SnackBar(content: Text('Tidak dapat membuka link: $url')),
         );
       }
-      throw 'Could not launch $url';
     }
   }
 

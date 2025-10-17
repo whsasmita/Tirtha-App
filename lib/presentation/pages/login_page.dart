@@ -54,7 +54,7 @@ class _LoginPageState extends State<LoginPage> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _errorMessage = "Email atau Password Salah!";
       });
     } finally {
       setState(() {
