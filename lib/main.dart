@@ -54,7 +54,7 @@ class MyApp extends StatelessWidget {
 
         // List Pages
         AppRoutes.listEducation: (context) => const EducationListPage(),
-        AppRoutes.listQuiz: (context) => const QuizDashboardPage(),
+        AppRoutes.listQuiz: (context) => const QuizListPage(),
 
         // Reminder
         AppRoutes.reminder: (context) => const ReminderPage(),
