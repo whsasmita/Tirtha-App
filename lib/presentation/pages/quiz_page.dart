@@ -21,15 +21,41 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
   final QuizService _quizService = QuizService();
   late Future<List<QuizModel>> _quizzesFuture;
 
+  List<QuizModel> _allQuizzes = [];
+  List<QuizModel> _filteredQuizzes = [];
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
-    _quizzesFuture = _quizService.fetchAllQuizzes();
+    _loadQuizzes();
+    _searchController.addListener(_onSearchChanged);
   }
 
-  void _refreshQuizzes() {
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _loadQuizzes() {
     setState(() {
       _quizzesFuture = _quizService.fetchAllQuizzes();
+    });
+    _quizzesFuture.then((data) {
+      setState(() {
+        _allQuizzes = data;
+        _filteredQuizzes = data;
+      });
+    });
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredQuizzes = _allQuizzes
+          .where((quiz) => quiz.name.toLowerCase().contains(query))
+          .toList();
     });
   }
 
@@ -38,9 +64,7 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
       context,
     ).push(MaterialPageRoute(builder: (_) => UpsertQuizPage(quizId: quizId)));
 
-    if (result == true) {
-      _refreshQuizzes();
-    }
+    if (result == true) _loadQuizzes();
   }
 
   void _navigateToCreateQuiz() async {
@@ -48,15 +72,11 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
       MaterialPageRoute(builder: (_) => const UpsertQuizPage(quizId: null)),
     );
 
-    if (result == true) {
-      _refreshQuizzes();
-    }
+    if (result == true) _loadQuizzes();
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
 
     if (index == 0) {
       Navigator.pushNamed(context, AppRoutes.profile);
@@ -68,14 +88,29 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
   }
 
   Future<void> _launchURL(String url) async {
-    final uri = Uri.parse(url);
-    
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+    if (url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('URL tidak tersedia')),
+      );
+      return;
+    }
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://$url';
+    }
+
+    final Uri uri = Uri.parse(url);
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal membuka link: $url')),
+        );
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Tidak dapat membuka link: $url')),
+          SnackBar(content: Text('Terjadi kesalahan: $e')),
         );
       }
     }
@@ -89,10 +124,7 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
       child: IntrinsicHeight(
         child: Row(
           children: [
-            SizedBox(
-              width: 40,
-              child: Text(no.toString(), textAlign: TextAlign.center),
-            ),
+            SizedBox(width: 40, child: Text(no.toString(), textAlign: TextAlign.center)),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
@@ -101,43 +133,28 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
             ),
             Container(
               width: 100,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8.0,
-                vertical: 8.0,
-              ),
-
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
               child: GestureDetector(
-                onTap: () {},
-                child: GestureDetector(
-                  onTap: () => _launchURL(quiz.url),
-                  child: const Text(
-                    'Klik disini',
-                    style: TextStyle(
-                      color: AppColors.secondary,
-                      decoration: TextDecoration.underline,
-                      decorationColor: AppColors.secondary,
-                    ),
+                onTap: () => _launchURL(quiz.url),
+                child: const Text(
+                  'Klik disini',
+                  style: TextStyle(
+                    color: AppColors.secondary,
+                    decoration: TextDecoration.underline,
+                    decorationColor: AppColors.secondary,
                   ),
                 ),
               ),
             ),
             IconButton(
               icon: const Icon(Icons.edit, size: 20, color: AppColors.primary),
-              onPressed: () {
-                print('Navigating to Edit Quiz ID: ${quiz.id}');
-                _navigateToEditQuiz(quiz.id);
-              },
+              onPressed: () => _navigateToEditQuiz(quiz.id),
             ),
-
             IconButton(
-              icon: const Icon(
-                Icons.delete_outline,
-                size: 20,
-                color: Colors.red,
-              ),
-              onPressed: () {
-                _quizService.deleteQuiz(quiz.id);
-                _refreshQuizzes();
+              icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+              onPressed: () async {
+                await _quizService.deleteQuiz(quiz.id);
+                _loadQuizzes();
               },
             ),
           ],
@@ -163,6 +180,7 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
               ),
             ),
             const SizedBox(height: 20),
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
@@ -174,36 +192,22 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: Colors.grey.shade300),
                       ),
-                      child: const TextField(
-                        decoration: InputDecoration(
-                          hintText: 'cari quiz disini',
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: const InputDecoration(
+                          hintText: 'Cari kuis disini',
                           hintStyle: TextStyle(color: Colors.grey),
                           prefixIcon: Icon(Icons.search, color: Colors.grey),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                            vertical: 14,
-                            horizontal: 10,
-                          ),
+                          contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 10),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: AppColors.tertiary,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.filter_list, color: Colors.white),
-                      onPressed: () {},
                     ),
                   ),
                 ],
               ),
             ),
+
             const SizedBox(height: 20),
 
             Container(
@@ -213,10 +217,7 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
               child: IntrinsicHeight(
                 child: Row(
                   children: [
-                    SizedBox(
-                      width: 40,
-                      child: Text("No", textAlign: TextAlign.center),
-                    ),
+                    SizedBox(width: 40, child: Text("No", textAlign: TextAlign.center)),
                     const Expanded(
                       child: Padding(
                         padding: EdgeInsets.all(8.0),
@@ -225,10 +226,7 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
                     ),
                     Container(
                       width: 100,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8.0,
-                        vertical: 8.0,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
                       child: const Text("Link"),
                     ),
                     const SizedBox(width: 10),
@@ -239,39 +237,21 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
               ),
             ),
 
-            FutureBuilder<List<QuizModel>>(
-              future: _quizzesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.all(20.0),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                } else if (snapshot.hasError) {
-                  return Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Center(
-                      child: Text('Gagal memuat data: ${snapshot.error}'),
-                    ),
-                  );
-                } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: snapshot.data!.length,
-                    itemBuilder: (context, index) {
-                      final quiz = snapshot.data![index];
-                      return _buildQuizTableItem(context, index + 1, quiz);
-                    },
-                  );
-                } else {
-                  return const Padding(
+            _filteredQuizzes.isEmpty
+                ? const Padding(
                     padding: EdgeInsets.all(20.0),
                     child: Center(child: Text('Belum ada kuis yang dibuat.')),
-                  );
-                }
-              },
-            ),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _filteredQuizzes.length,
+                    itemBuilder: (context, index) {
+                      final quiz = _filteredQuizzes[index];
+                      return _buildQuizTableItem(context, index + 1, quiz);
+                    },
+                  ),
+
             const SizedBox(height: 80),
           ],
         ),

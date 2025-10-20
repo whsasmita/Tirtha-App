@@ -11,18 +11,33 @@ import 'package:tirtha_app/presentation/pages/create_quiz_page.dart';
 import 'package:tirtha_app/presentation/pages/about_page.dart';
 import 'package:tirtha_app/presentation/pages/education_list_page.dart';
 import 'package:tirtha_app/presentation/pages/quiz_list_page.dart';
+import 'package:tirtha_app/presentation/pages/home_example.dart';
 import 'package:tirtha_app/core/services/app_client.dart';
+import 'package:provider/provider.dart';
+import 'package:tirtha_app/core/config/auth_provider.dart';
 
 void main() {
   ApiClient.init();
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
+
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    authProvider.checkAuth();
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       initialRoute: AppRoutes.preview,
@@ -39,6 +54,7 @@ class MyApp extends StatelessWidget {
         AppRoutes.createQuiz: (context) => const UpsertQuizPage(),
         AppRoutes.listEducation: (context) => const EducationListPage(),
         AppRoutes.listQuiz: (context) => const QuizListPage(),
+        AppRoutes.homeUser: (context) => const HomeExample(),
       },
     );
   }

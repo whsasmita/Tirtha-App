@@ -10,4 +10,5 @@ class AppRoutes {
   static const String createQuiz = '/create-quiz';
   static const String listEducation = '/list-education';
   static const String listQuiz = '/list-quiz';
+  static const String homeUser = '/home-user';
 }
