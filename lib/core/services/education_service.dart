@@ -92,7 +92,7 @@ class EducationService {
 
   Future<void> deleteEducation(int id) async {
     try {
-      final response = await ApiClient.dio.delete(
+      await ApiClient.dio.delete(
         '/educations/$id',
       );
 

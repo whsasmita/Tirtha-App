@@ -11,6 +11,7 @@ class AppRoutes {
   static const String createQuiz = '/create-quiz';
   static const String listEducation = '/list-education';
   static const String listQuiz = '/list-quiz';
+<<<<<<< HEAD
 
   // Monitoring
   static const String monitoring = '/monitoring';
@@ -29,3 +30,7 @@ class AppRoutes {
   static const String createReminder = '/reminder/create';
   // static const String editReminder = '/reminder/{id}/edit';
 }
+=======
+  static const String homeUser = '/home-user';
+}
+>>>>>>> yudi
