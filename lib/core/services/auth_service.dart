@@ -33,13 +33,14 @@ class AuthService {
     }
   }
 
-  Future<UserModel> login(String email, String password) async {
+  Future<UserModel> login(String email, String password, String? fcmToken) async {
     try {
       final response = await ApiClient.dio.post(
         '/auth/login',
         data: {
           'email': email,
           'password': password,
+          'fcm_token': fcmToken,
         },
         options: Options(
           headers: {Headers.contentTypeHeader: Headers.jsonContentType},

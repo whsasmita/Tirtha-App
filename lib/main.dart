@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:tirtha_app/presentation/pages/home_page.dart';
 import 'package:tirtha_app/presentation/pages/monitoring/complaint/complaint_monitoring_page.dart';
 import 'package:tirtha_app/presentation/pages/monitoring/complaint/create_complaint_monitoring.dart';
@@ -25,8 +28,87 @@ import 'package:tirtha_app/core/services/app_client.dart';
 import 'package:provider/provider.dart';
 import 'package:tirtha_app/core/config/auth_provider.dart';
 
-void main() {
+// Background message handler
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("Handling a background message: ${message.messageId}");
+}
+
+// Create an instance of FlutterLocalNotificationsPlugin
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = 
+    FlutterLocalNotificationsPlugin();
+
+Future<void> initializeLocalNotifications() async {
+  // Android Initialization Settings
+  const AndroidInitializationSettings initializationSettingsAndroid = 
+      AndroidInitializationSettings('notif_icon');
+
+  // iOS Initialization Settings
+  final DarwinInitializationSettings initializationSettingsIOS = 
+      DarwinInitializationSettings(
+    requestAlertPermission: true,
+    requestBadgePermission: true,
+    requestSoundPermission: true,
+  );
+
+  // Combine platform-specific settings
+  final InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
+    iOS: initializationSettingsIOS,
+  );
+
+  // Initialize the plugin
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+    onDidReceiveNotificationResponse: (NotificationResponse notificationResponse) async {
+      print('Notification tapped: ${notificationResponse.payload}');
+      // Handle navigation based on payload here
+    },
+  );
+}
+
+// Request notification permissions (especially for iOS)
+Future<void> requestNotificationPermissions() async {
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+  
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+    provisional: false,
+  );
+
+  print('User granted permission: ${settings.authorizationStatus}');
+  
+  // Get FCM token
+  String? token = await messaging.getToken();
+  print('FCM Token: $token');
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    // Initialize Firebase
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
+  } catch (e) {
+    print('Error initialize firebase $e');
+  }
+
+  // Initialize local notifications
+  await initializeLocalNotifications();
+  
+  // Request notification permissions
+  await requestNotificationPermissions();
+  
+  // Set up background message handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // Initialize API Client
   ApiClient.init();
+  
   runApp(
     MultiProvider(
       providers: [
@@ -37,14 +119,56 @@ void main() {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
 
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    _setupForegroundNotificationHandler();
+  }
+
+  void _setupForegroundNotificationHandler() {
+    // Handle foreground messages
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      RemoteNotification? notification = message.notification;
+      AndroidNotification? android = message.notification?.android;
+
+      // Show notification when app is in foreground
+      if (notification != null && android != null) {
+        flutterLocalNotificationsPlugin.show(
+          notification.hashCode,
+          notification.title,
+          notification.body,
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              'default_channel',
+              'Default Channel',
+              channelDescription: 'This channel is used for important notifications.',
+              icon: 'notif_icon',
+              importance: Importance.max,
+              priority: Priority.high,
+            ),
+          ),
+        );
+      }
+    });
+
+    // Handle notification tap when app is in background
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print('Notification tapped from background: ${message.messageId}');
+      // Handle navigation based on message data
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
     authProvider.checkAuth();
 
     return MaterialApp(

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "899583150067",
+    "project_id": "tirtha-app-2d60c",
+    "storage_bucket": "tirtha-app-2d60c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:899583150067:android:6ac39ca3a893f9a0ac3486",
+        "android_client_info": {
+          "package_name": "com.example.tirtha_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCHrOnVqr1xkWM0LS_vynjRSsvqwv3Fqbk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

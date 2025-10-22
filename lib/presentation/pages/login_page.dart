@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:tirtha_app/presentation/widgets/app_button.dart';
 import 'package:tirtha_app/presentation/widgets/app_text_field.dart';
 import 'package:tirtha_app/presentation/widgets/password_text_field.dart';
@@ -16,9 +19,9 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  
+
   final AuthService _authService = AuthService();
-  
+
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -29,10 +32,34 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  /// Mendapatkan FCM Token dari Firebase
+  Future<String?> _getFcmToken() async {
+    try {
+      String? token = await FirebaseMessaging.instance.getToken();
+      
+      if (token != null) {
+        print('╔════════════════════════════════════════╗');
+        print('║          FCM TOKEN BERHASIL            ║');
+        print('╠════════════════════════════════════════╣');
+        print('║ Token: $token');
+        print('╚════════════════════════════════════════╝');
+      } else {
+        print('⚠️ FCM Token tidak tersedia');
+      }
+      
+      return token;
+    } catch (e) {
+      print('❌ Error mendapatkan FCM token: $e');
+      return null;
+    }
+  }
+
+  /// Handle Login dengan FCM Token
   Future<void> _handleLogin() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
+    // Validasi input
     if (email.isEmpty || password.isEmpty) {
       setState(() {
         _errorMessage = 'Email dan Password tidak boleh kosong.';
@@ -47,16 +74,36 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      await _authService.login(email, password);
+      // 1. Dapatkan FCM Token
+      print('🔄 Mengambil FCM Token...');
+      String? fcmToken = await _getFcmToken();
+      
+      if (fcmToken != null) {
+        print('✅ FCM Token berhasil didapatkan');
+      } else {
+        print('⚠️ Login tanpa FCM Token (notifikasi mungkin tidak berfungsi)');
+      }
 
-      final user = await _authService.getUserProfile();
+      // 2. Login dengan email, password, dan FCM token
+      print('🔄 Proses login ke server...');
+      final user = await _authService.login(email, password, fcmToken);
 
+      print('✅ Login berhasil!');
+      print('👤 User: ${user.name ?? 'Unknown'}');
+      print('📧 Email: ${user.email ?? 'Unknown'}');
+      
+      if (fcmToken != null) {
+        print('🔔 FCM Token berhasil disimpan ke database');
+      }
+
+      // 3. Navigate ke home page
       if (mounted) {
         Navigator.pushReplacementNamed(context, AppRoutes.home);
       }
     } catch (e) {
+      print('❌ Error during login: $e');
       setState(() {
-        _errorMessage = "Email atau Password Salah!";
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
       });
     } finally {
       setState(() {
@@ -75,7 +122,9 @@ class _LoginPageState extends State<LoginPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 80),
-            Center(child: Image.asset('assets/logo_tirtha_app.png', height: 280)),
+            Center(
+              child: Image.asset('assets/logo_tirtha_app.png', height: 280),
+            ),
             const SizedBox(height: 5),
             const Text(
               'Email / No HP',
@@ -112,7 +161,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-           
+
             if (_errorMessage != null)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -125,7 +174,7 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 24),
             AppButton(
               text: _isLoading ? 'Loading...' : 'MASUK',
-              onPressed: _handleLogin, 
+              onPressed: _isLoading ? () {} : _handleLogin,
             ),
             const SizedBox(height: 16),
             Row(
