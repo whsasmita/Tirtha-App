@@ -49,7 +49,7 @@ class PreviewPage extends StatelessWidget {
             const SizedBox(height: 12),
 
             const Text(
-              'Lorem ipsum sit dolor amet. adiscipiling elit lorem ipppsum site sakalk sakksallaasaas',
+              'Daftar dan gunakan layanan kesehatan terbaik\nuntuk Anda',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14, color: Colors.grey, height: 1.5),
             ),

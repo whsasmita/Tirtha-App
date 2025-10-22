@@ -51,8 +51,23 @@ class _RegisterPageState extends State<RegisterPage> {
         final name = _nameController.text.trim();
         final email = _emailController.text.trim();
         final password = _passwordController.text.trim();
+        
+        // 🔹 Dapatkan timezone offset dari device (Built-in Flutter, tanpa library)
+        final now = DateTime.now();
+        final offsetInHours = now.timeZoneOffset.inHours;
+        final offsetMinutes = now.timeZoneOffset.inMinutes.remainder(60);
+        
+        // Format timezone sebagai UTC offset (contoh: "UTC+07:00" untuk WIB)
+        String timezone = 'UTC${offsetInHours >= 0 ? '+' : ''}${offsetInHours.toString().padLeft(2, '0')}';
+        if (offsetMinutes != 0) {
+          timezone += ':${offsetMinutes.abs().toString().padLeft(2, '0')}';
+        } else {
+          timezone += ':00';
+        }
+        
+        print('Timezone detected: $timezone'); // Debug: Output contoh "UTC+07:00"
 
-        await _authService.register(name, email, password);
+        await _authService.register(name, email, password, timezone);
 
         if (mounted) {
           Navigator.pushReplacementNamed(context, AppRoutes.login);
@@ -81,7 +96,7 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 80),
 
             Center(
-              child: Image.asset('assets/logo_tirtha_app.png', height: 280),
+              child: Image.asset('assets/logo_tirtha_app.png', height: 200),
             ),
             const SizedBox(height: 5),
 
@@ -109,17 +124,6 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
             const SizedBox(height: 24),
 
-            // const Text(
-            //   'No HP (WhatsApp)',
-            //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            // ),
-            // const SizedBox(height: 8),
-            // AppTextField(
-            //   hintText: 'Masukkan nomor telepon',
-            //   controller: _numberController,
-            //   prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary),
-            // ),
-            // const SizedBox(height: 24),
             const Text(
               'Password',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

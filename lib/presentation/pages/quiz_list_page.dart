@@ -45,7 +45,7 @@ class _QuizListPageState extends State<QuizListPage> {
     if (index == 0) {
       Navigator.pushNamed(context, AppRoutes.home);
     } else if (index == 1) {
-      Navigator.pushNamed(context, AppRoutes.educationDashboard);
+      Navigator.pushNamed(context, AppRoutes.listEducation);
     } else if (index == 2) {
       Navigator.pushNamed(context, AppRoutes.profile);
     }

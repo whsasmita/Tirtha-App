@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:tirtha_app/data/models/user_model.dart';
 
 class AuthService {
-  Future<void> register(String name, String email, String password) async {
+  Future<void> register(String name, String email, String password, String timezone) async {
     try {
       final response = await ApiClient.dio.post(
         '/auth/register',
@@ -11,6 +11,7 @@ class AuthService {
           'name': name,
           'email': email,
           'password': password,
+          'timezone': timezone,
         },
         options: Options(
           headers: {
@@ -21,6 +22,7 @@ class AuthService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         print("Registrasi berhasil: ${response.data['message']}");
+        print("timezone: $timezone");
         return;
       } else {
         throw Exception(response.data['message'] ?? 'Registrasi gagal.');

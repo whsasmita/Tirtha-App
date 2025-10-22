@@ -123,16 +123,16 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             const SizedBox(height: 80),
             Center(
-              child: Image.asset('assets/logo_tirtha_app.png', height: 280),
+              child: Image.asset('assets/logo_tirtha_app.png', height: 200),
             ),
             const SizedBox(height: 5),
             const Text(
-              'Email / No HP',
+              'Email',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             AppTextField(
-              hintText: 'Masukkan email / nomor telepon',
+              hintText: 'Masukkan email',
               controller: _emailController,
               prefixIcon: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.0),
