@@ -49,12 +49,20 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await _authService.login(email, password);
 
+      final user = await _authService.getUserProfile();
+
       if (mounted) {
-        Navigator.pushReplacementNamed(context, AppRoutes.home);
+        switch (user.role) {
+          case 'admin':
+            Navigator.pushReplacementNamed(context, AppRoutes.educationDashboard);
+            break;
+          default:
+            Navigator.pushReplacementNamed(context, AppRoutes.homeUser);
+        }
       }
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _errorMessage = "Email atau Password Salah!";
       });
     } finally {
       setState(() {

@@ -33,7 +33,7 @@ class AuthService {
     }
   }
 
-  Future<void> login(String email, String password) async {
+  Future<UserModel> login(String email, String password) async {
     try {
       final response = await ApiClient.dio.post(
         '/auth/login',
@@ -49,7 +49,12 @@ class AuthService {
       if (response.data != null && response.data['token'] != null) {
         final token = response.data['token'];
         await ApiClient.saveToken(token);
-        return;
+
+        // 🔹 Setelah login berhasil, ambil profil user
+        final profileResponse = await ApiClient.dio.get('/profile');
+        final userData = UserModel.fromJson(profileResponse.data);
+
+        return userData;
       } else {
         throw Exception('Respons server tidak valid. Token tidak ditemukan.');
       }
@@ -62,22 +67,12 @@ class AuthService {
 
         if (statusCode == 401 || statusCode == 403) {
           errorMessage = 'Email atau password salah.';
-        } 
-        else if (statusCode == 400) {
-            if (responseData is Map && responseData['message'] != null) {
-                errorMessage = responseData['message'].toString();
-            } else {
-                errorMessage = 'Permintaan tidak valid. Cek kembali data yang Anda masukkan.';
-            }
+        } else if (statusCode == 400) {
+          errorMessage = responseData['message'] ?? 'Permintaan tidak valid.';
+        } else if (statusCode != null && statusCode >= 500) {
+          errorMessage = 'Server sedang gangguan. Coba lagi nanti.';
         }
-        else if (statusCode != null && statusCode >= 500) {
-          errorMessage = 'Server sedang mengalami gangguan. Mohon coba beberapa saat lagi.';
-        }
-        
-      } else {
-        errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
       }
-
       throw Exception(errorMessage);
     }
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:tirtha_app/presentation/themes/color.dart';
-import 'package:tirtha_app/presentation/widgets/top_bar_v2.dart';
+import 'package:tirtha_app/presentation/widgets/top_bar.dart';
 import 'package:tirtha_app/presentation/widgets/bottom_nav_v1.dart';
 import 'package:tirtha_app/presentation/widgets/grid_item_card.dart';
 import 'package:tirtha_app/presentation/widgets/home_header.dart';
@@ -16,24 +16,34 @@ class QuizListPage extends StatefulWidget {
   State<QuizListPage> createState() => _QuizListPageState();
 }
 
-class _QuizListPageState extends State<QuizListPage> { 
+class _QuizListPageState extends State<QuizListPage> {
   int _selectedIndex = 2;
   final QuizService _quizService = QuizService();
   late Future<List<QuizModel>> _quizFuture;
+  List<QuizModel> _allQuizzes = [];
+  List<QuizModel> _filteredQuizzes = [];
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _quizFuture = _quizService.fetchAllQuizzes();
+    _quizFuture = _loadQuizzes();
+  }
+
+  Future<List<QuizModel>> _loadQuizzes() async {
+    final quizzes = await _quizService.fetchAllQuizzes();
+    setState(() {
+      _allQuizzes = quizzes;
+      _filteredQuizzes = quizzes;
+    });
+    return quizzes;
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
 
     if (index == 0) {
-      // TODO: Navigasi ke Home Dashboard
+      Navigator.pushNamed(context, AppRoutes.homeUser);
     } else if (index == 1) {
       Navigator.pushNamed(context, AppRoutes.educationDashboard);
     } else if (index == 2) {
@@ -41,14 +51,42 @@ class _QuizListPageState extends State<QuizListPage> {
     }
   }
 
-  void _launchURL(String url, BuildContext context) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+  void _filterQuizzes(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredQuizzes = _allQuizzes;
+      } else {
+        _filteredQuizzes = _allQuizzes
+            .where((quiz) => quiz.name.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
+  }
+
+  Future<void> _launchURL(String url) async {
+    if (url.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('URL tidak tersedia')));
+      return;
+    }
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://$url';
+    }
+
+    final Uri uri = Uri.parse(url);
+
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal membuka link: $url')),
+        );
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Tidak dapat membuka link: $url')),
+          SnackBar(content: Text('Terjadi kesalahan: $e')),
         );
       }
     }
@@ -58,7 +96,7 @@ class _QuizListPageState extends State<QuizListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: const TopBarV2(),
+      appBar: const TopBar(),
       body: Column(
         children: [
           Padding(
@@ -70,6 +108,7 @@ class _QuizListPageState extends State<QuizListPage> {
             ),
           ),
           const SizedBox(height: 10),
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Row(
@@ -81,35 +120,27 @@ class _QuizListPageState extends State<QuizListPage> {
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Colors.grey.shade300),
                     ),
-                    child: const TextField(
-                      decoration: InputDecoration(
-                        hintText: 'cari kuis disini',
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: _filterQuizzes,
+                      decoration: const InputDecoration(
+                        hintText: 'Cari kuis di sini...',
                         hintStyle: TextStyle(color: Colors.grey),
                         prefixIcon: Icon(Icons.search, color: Colors.grey),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 10,
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: AppColors.tertiary,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.filter_list, color: Colors.white),
-                    onPressed: () {},
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 10),
-          
+
           Expanded(
             child: FutureBuilder<List<QuizModel>>(
               future: _quizFuture,
@@ -120,11 +151,13 @@ class _QuizListPageState extends State<QuizListPage> {
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Text('Gagal memuat kuis: ${snapshot.error}', style: const TextStyle(color: Colors.red)),
+                      child: Text(
+                        'Gagal memuat kuis: ${snapshot.error}',
+                        style: const TextStyle(color: Colors.red),
+                      ),
                     ),
                   );
-                } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                  final quizList = snapshot.data!;
+                } else if (_filteredQuizzes.isNotEmpty) {
                   return GridView.builder(
                     padding: const EdgeInsets.all(16.0),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -133,18 +166,18 @@ class _QuizListPageState extends State<QuizListPage> {
                       mainAxisSpacing: 16.0,
                       childAspectRatio: 1.4,
                     ),
-                    itemCount: quizList.length,
+                    itemCount: _filteredQuizzes.length,
                     itemBuilder: (context, index) {
-                      final item = quizList[index];
+                      final item = _filteredQuizzes[index];
                       return GridItemCard(
-                        title: item.name, 
-                        imageUrl: 'assets/quiz.jpg', 
-                        onTap: () => _launchURL(item.url, context),
+                        title: item.name,
+                        imageUrl: 'assets/quiz.jpg',
+                        onTap: () => _launchURL(item.url),
                       );
                     },
                   );
                 } else {
-                  return const Center(child: Text('Belum ada data kuis.'));
+                  return const Center(child: Text('Kuis tidak ditemukan.'));
                 }
               },
             ),

@@ -13,14 +13,12 @@ class AppMenuDialog extends StatefulWidget {
 
 class _AppMenuDialogState extends State<AppMenuDialog> {
   final AuthService _authService = AuthService();
-  final AuthService _profileService = AuthService();
-
   late Future<UserModel> _userProfileFuture;
 
   @override
   void initState() {
     super.initState();
-    _userProfileFuture = _profileService.getUserProfile();
+    _userProfileFuture = _authService.getUserProfile();
   }
 
   Widget _buildMenuItem(
@@ -75,25 +73,27 @@ class _AppMenuDialogState extends State<AppMenuDialog> {
         ],
       ),
       padding: const EdgeInsets.all(20.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          FutureBuilder<UserModel>(
-            future: _userProfileFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                return Center(
-                  child: Text(
-                    'Gagal memuat profil: ${snapshot.error.toString()}',
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                );
-              } else if (snapshot.hasData) {
-                final user = snapshot.data!;
-                return Row(
+      child: FutureBuilder<UserModel>(
+        future: _userProfileFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Gagal memuat profil: ${snapshot.error.toString()}',
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          } else if (snapshot.hasData) {
+            final user = snapshot.data!;
+            final role = user.role ?? 'user';
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
                   children: [
                     const CircleAvatar(
                       radius: 30,
@@ -112,8 +112,11 @@ class _AppMenuDialogState extends State<AppMenuDialog> {
                             ),
                           ),
                           Text(
-                            user.role ?? "Email Tidak Tersedia",
-                            style: const TextStyle(color: Colors.grey, fontSize: 13),
+                            role,
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
@@ -123,49 +126,60 @@ class _AppMenuDialogState extends State<AppMenuDialog> {
                       child: const Icon(Icons.close, color: Colors.grey),
                     ),
                   ],
-                );
-              } else {
-                return const Center(child: Text('Data tidak tersedia'));
-              }
-            },
-          ),
-          const Divider(height: 30),
-          _buildMenuItem(
-            context,
-            'Dashboard Edukasi',
-            AppRoutes.educationDashboard,
-            AppColors.secondary,
-          ),
-          _buildMenuItem(
-            context,
-            'Dashboard Kuis',
-            AppRoutes.quizDashboard,
-            AppColors.primary,
-          ),
-          const Divider(height: 30),
-          SizedBox(
-            height: 48,
-            child: ElevatedButton(
-              onPressed: () {
-                _authService.logout();
-                Navigator.pushNamedAndRemoveUntil(context, AppRoutes.preview, (route) => false);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
                 ),
-              ),
-              child: const Text(
-                'KELUAR',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                const Divider(height: 30),
+
+                if (role == 'admin')
+                  _buildMenuItem(
+                    context,
+                    'Dashboard Edukasi',
+                    AppRoutes.educationDashboard,
+                    AppColors.secondary,
+                  ),
+
+                if (role == 'admin')
+                  _buildMenuItem(
+                    context,
+                    'Dashboard Kuis',
+                    AppRoutes.quizDashboard,
+                    AppColors.primary,
+                  ),
+
+                if (role == 'admin')
+                  const Divider(height: 30),
+
+                SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _authService.logout();
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        AppRoutes.preview,
+                        (route) => false,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      'KELUAR',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
-        ],
+              ],
+            );
+          } else {
+            return const Center(child: Text('Data tidak tersedia'));
+          }
+        },
       ),
     );
   }

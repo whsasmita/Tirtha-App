@@ -1,30 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:tirtha_app/presentation/themes/color.dart';
-import 'package:tirtha_app/presentation/widgets/top_bar_v2.dart';
+import 'package:tirtha_app/presentation/widgets/top_bar.dart';
 import 'package:tirtha_app/presentation/widgets/bottom_nav_v1.dart';
 import 'package:tirtha_app/presentation/widgets/grid_item_card.dart';
 import 'package:tirtha_app/presentation/widgets/home_header.dart';
 import 'package:tirtha_app/routes/app_routes.dart';
-import 'package:tirtha_app/core/services/education_service.dart'; // Service untuk mengambil data
-import 'package:tirtha_app/data/models/education_model.dart'; // Model data edukasi
+import 'package:tirtha_app/core/services/education_service.dart';
+import 'package:tirtha_app/data/models/education_model.dart';
 
 class EducationListPage extends StatefulWidget {
   const EducationListPage({super.key});
 
   @override
-  State<EducationListPage> createState() => _EducationDashboardPageState();
+  State<EducationListPage> createState() => _EducationListPageState();
 }
 
-class _EducationDashboardPageState extends State<EducationListPage> {
+class _EducationListPageState extends State<EducationListPage> {
   int _selectedIndex = 1;
   final EducationService _educationService = EducationService();
   late Future<List<EducationModel>> _educationFuture;
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+  List<EducationModel> _allEducations = [];
+  List<EducationModel> _filteredEducations = [];
+
   @override
   void initState() {
     super.initState();
+    _loadEducations();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _loadEducations() {
     _educationFuture = _educationService.fetchAllEducations();
+    _educationFuture.then((data) {
+      setState(() {
+        _allEducations = data;
+        _filteredEducations = data;
+      });
+    });
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text.toLowerCase();
+      _filteredEducations = _allEducations
+          .where((edu) => edu.name.toLowerCase().contains(_searchQuery))
+          .toList();
+    });
   }
 
   void _onItemTapped(int index) {
@@ -33,7 +58,7 @@ class _EducationDashboardPageState extends State<EducationListPage> {
     });
 
     if (index == 0) {
-      // TODO: Navigasi ke halaman home
+      Navigator.pushNamed(context, AppRoutes.homeUser);
     } else if (index == 1) {
       // Tetap di halaman ini
     } else if (index == 2) {
@@ -41,24 +66,47 @@ class _EducationDashboardPageState extends State<EducationListPage> {
     }
   }
 
-  void _launchURL(String url, BuildContext context) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+  Future<void> _launchURL(String url) async {
+    if (url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('URL tidak tersedia')),
+      );
+      return;
+    }
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://$url';
+    }
+
+    final Uri uri = Uri.parse(url);
+
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal membuka link: $url')),
+        );
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Tidak dapat membuka link: $url')),
+          SnackBar(content: Text('Terjadi kesalahan: $e')),
         );
       }
     }
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: const TopBarV2(),
+      appBar: const TopBar(),
       body: Column(
         children: [
           Padding(
@@ -70,6 +118,7 @@ class _EducationDashboardPageState extends State<EducationListPage> {
             ),
           ),
           const SizedBox(height: 10),
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Row(
@@ -81,9 +130,10 @@ class _EducationDashboardPageState extends State<EducationListPage> {
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Colors.grey.shade300),
                     ),
-                    child: const TextField(
-                      decoration: InputDecoration(
-                        hintText: 'cari edukasi disini',
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: const InputDecoration(
+                        hintText: 'Cari edukasi di sini...',
                         hintStyle: TextStyle(color: Colors.grey),
                         prefixIcon: Icon(Icons.search, color: Colors.grey),
                         border: InputBorder.none,
@@ -95,39 +145,29 @@ class _EducationDashboardPageState extends State<EducationListPage> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: AppColors.tertiary,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.filter_list, color: Colors.white),
-                    onPressed: () {},
-                  ),
-                ),
               ],
             ),
           ),
+
           const SizedBox(height: 10),
-          
+
           Expanded(
             child: FutureBuilder<List<EducationModel>>(
               future: _educationFuture,
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (snapshot.connectionState == ConnectionState.waiting && _allEducations.isEmpty) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (snapshot.hasError) {
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Text('Gagal memuat edukasi: ${snapshot.error}', style: const TextStyle(color: Colors.red)),
+                      child: Text(
+                        'Gagal memuat edukasi: ${snapshot.error}',
+                        style: const TextStyle(color: Colors.red),
+                      ),
                     ),
                   );
-                } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                  final educationList = snapshot.data!;
+                } else if (_filteredEducations.isNotEmpty) {
                   return GridView.builder(
                     padding: const EdgeInsets.all(16.0),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -136,19 +176,23 @@ class _EducationDashboardPageState extends State<EducationListPage> {
                       mainAxisSpacing: 16.0,
                       childAspectRatio: 1.4,
                     ),
-                    itemCount: educationList.length,
+                    itemCount: _filteredEducations.length,
                     itemBuilder: (context, index) {
-                      final item = educationList[index];
+                      final item = _filteredEducations[index];
                       return GridItemCard(
-                        
-                        title: item.name, 
+                        title: item.name,
                         imageUrl: "assets/doctor.png",
-                        onTap: () => _launchURL(item.url, context),
+                        onTap: () => _launchURL(item.url),
                       );
                     },
                   );
                 } else {
-                  return const Center(child: Text('Belum ada data edukasi.'));
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: Text('Tidak ditemukan hasil pencarian.'),
+                    ),
+                  );
                 }
               },
             ),
