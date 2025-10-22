@@ -50,7 +50,7 @@ class _LoginPageState extends State<LoginPage> {
       await _authService.login(email, password);
 
       if (mounted) {
-        Navigator.pushReplacementNamed(context, AppRoutes.educationDashboard);
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
       }
     } catch (e) {
       setState(() {
