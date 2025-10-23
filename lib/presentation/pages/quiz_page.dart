@@ -79,7 +79,7 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
     setState(() => _selectedIndex = index);
 
     if (index == 0) {
-      Navigator.pushNamed(context, AppRoutes.profile);
+      Navigator.pushNamed(context, AppRoutes.home);
     } else if (index == 1) {
       Navigator.pushNamed(context, AppRoutes.educationDashboard);
     } else if (index == 2) {
