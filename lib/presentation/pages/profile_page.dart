@@ -6,6 +6,8 @@ import 'package:tirtha_app/presentation/widgets/top_bar.dart';
 import 'package:tirtha_app/presentation/widgets/info_card.dart';
 import 'package:tirtha_app/routes/app_routes.dart';
 import 'package:tirtha_app/core/services/auth_service.dart';
+import 'package:tirtha_app/core/services/education_service.dart';
+import 'package:tirtha_app/core/services/quiz_service.dart';
 import 'package:tirtha_app/data/models/user_model.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -19,13 +21,35 @@ class _ProfilePageState extends State<ProfilePage> {
   int _selectedIndex = 2;
   final AuthService _authService = AuthService();
   final AuthService _profileService = AuthService();
+  final EducationService _educationService = EducationService();
+  final QuizService _quizService = QuizService();
 
-  late Future<UserModel> _getUserProfile;
+  Future<UserModel>? _getUserProfile;
+  Future<int>? _educationCount;
+  Future<int>? _quizCount;
 
   @override
   void initState() {
     super.initState();
     _getUserProfile = _profileService.getUserProfile();
+  }
+
+  Future<int> _getEducationCount() async {
+    try {
+      final educations = await _educationService.fetchAllEducations();
+      return educations.length;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  Future<int> _getQuizCount() async {
+    try {
+      final quizzes = await _quizService.fetchAllQuizzes();
+      return quizzes.length;
+    } catch (e) {
+      return 0;
+    }
   }
 
   void _onItemTappedUser(int index) {
@@ -51,7 +75,6 @@ class _ProfilePageState extends State<ProfilePage> {
       Navigator.pushNamed(context, AppRoutes.quizDashboard);
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -105,29 +128,61 @@ class _ProfilePageState extends State<ProfilePage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.pushNamed(
-                              context, AppRoutes.educationDashboard);
+                      FutureBuilder<int>(
+                        future: _getEducationCount(),
+                        builder: (context, eduSnapshot) {
+                          String count = '0';
+                          
+                          if (eduSnapshot.connectionState == ConnectionState.waiting) {
+                            count = '...';
+                          } else if (eduSnapshot.hasError) {
+                            count = '0';
+                            print('Error education count: ${eduSnapshot.error}');
+                          } else if (eduSnapshot.hasData) {
+                            count = eduSnapshot.data.toString();
+                          }
+                          
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                  context, AppRoutes.educationDashboard);
+                            },
+                            child: InfoCard(
+                              title: 'EDUKASI',
+                              count: count,
+                              backgroundColor: AppColors.secondary,
+                              onPressed: () {},
+                            ),
+                          );
                         },
-                        child: InfoCard(
-                          title: 'EDUKASI',
-                          count: '11',
-                          backgroundColor: AppColors.secondary,
-                          onPressed: () {},
-                        ),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.pushNamed(
-                              context, AppRoutes.quizDashboard);
+                      FutureBuilder<int>(
+                        future: _getQuizCount(),
+                        builder: (context, quizSnapshot) {
+                          String count = '0';
+                          
+                          if (quizSnapshot.connectionState == ConnectionState.waiting) {
+                            count = '...';
+                          } else if (quizSnapshot.hasError) {
+                            count = '0';
+                            print('Error quiz count: ${quizSnapshot.error}');
+                          } else if (quizSnapshot.hasData) {
+                            count = quizSnapshot.data.toString();
+                          }
+                          
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                  context, AppRoutes.quizDashboard);
+                            },
+                            child: InfoCard(
+                              title: 'KUIS',
+                              count: count,
+                              backgroundColor: AppColors.tertiary,
+                              onPressed: () {},
+                            ),
+                          );
                         },
-                        child: InfoCard(
-                          title: 'KUIS',
-                          count: '18',
-                          backgroundColor: AppColors.tertiary,
-                          onPressed: () {},
-                        ),
                       ),
                     ],
                   ),

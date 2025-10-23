@@ -116,6 +116,58 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
     }
   }
 
+  Future<void> _confirmDeleteQuiz(QuizModel quiz) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Konfirmasi Hapus'),
+          content: Text('Apakah Anda yakin ingin menghapus kuis "${quiz.name}"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('Hapus'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      try {
+        await _quizService.deleteQuiz(quiz.id);
+        _loadQuizzes();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Kuis "${quiz.name}" berhasil dihapus'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gagal menghapus kuis: $e'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    }
+  }
+
   Widget _buildQuizTableItem(BuildContext context, int no, QuizModel quiz) {
     return Container(
       decoration: BoxDecoration(
@@ -152,10 +204,7 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-              onPressed: () async {
-                await _quizService.deleteQuiz(quiz.id);
-                _loadQuizzes();
-              },
+              onPressed: () => _confirmDeleteQuiz(quiz),
             ),
           ],
         ),

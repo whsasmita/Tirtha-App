@@ -37,6 +37,7 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
   void dispose() {
     _nameController.dispose();
     _urlController.dispose();
+    _thumbnailController.dispose();
     super.dispose();
   }
 
@@ -55,16 +56,67 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
     }
   }
 
-  Future<void> _handleUpsertEducation() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  Future<void> _showConfirmationDialog({
+    required String title,
+    required String content,
+    required VoidCallback onConfirm,
+  }) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(content),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Batal',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                onConfirm();
+              },
+              child: const Text(
+                'Ya',
+                style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
+  Future<void> _handleUpsertEducation() async {
     if (_nameController.text.trim().isEmpty || _urlController.text.trim().isEmpty) {
       _showError('Judul dan Link tidak boleh kosong.');
       return;
     }
+
+    final isUpdating = widget.educationId != null;
+    final confirmMessage = isUpdating 
+        ? 'Apakah Anda yakin ingin menyimpan perubahan?'
+        : 'Apakah Anda yakin ingin membuat edukasi ini?';
+
+    await _showConfirmationDialog(
+      title: 'Konfirmasi',
+      content: confirmMessage,
+      onConfirm: _executeUpsertEducation,
+    );
+  }
+
+  Future<void> _executeUpsertEducation() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
     try {
       final name = _nameController.text.trim();
@@ -104,9 +156,18 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
     });
   }
 
-  void _handleReset() {
+  Future<void> _handleReset() async {
+    await _showConfirmationDialog(
+      title: 'Konfirmasi Reset',
+      content: 'Apakah Anda yakin ingin mereset semua field?',
+      onConfirm: _executeReset,
+    );
+  }
+
+  void _executeReset() {
     _nameController.clear();
     _urlController.clear();
+    _thumbnailController.clear();
     setState(() {
       _errorMessage = null;
       _isLoading = false;
@@ -130,7 +191,7 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
       backgroundColor: Colors.white,
       appBar: AppBarBack(
         title: title,
-        backgroundColor: AppColors.tertiary,
+        backgroundColor: AppColors.secondary,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -215,59 +276,87 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
             
             if (_errorMessage != null)
               Padding(
-                padding: const EdgeInsets.only(top: 16.0),
+                padding: const EdgeInsets.only(top: 24.0),
                 child: Text(
                   _errorMessage!,
                   style: const TextStyle(color: Colors.red),
                   textAlign: TextAlign.center,
                 ),
               ),
-              
-            const SizedBox(height: 40),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _handleReset,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey.shade700,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text(
-                      'RESET',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleUpsertEducation,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.tertiary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: Text(
-                      _isLoading ? 'Loading...' : buttonText,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            
+            // Extra space untuk bottom navbar
+            const SizedBox(height: 80),
+          ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.3),
+              spreadRadius: 1,
+              blurRadius: 5,
+              offset: const Offset(0, -3),
             ),
           ],
+        ),
+        child: SafeArea(
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _handleReset,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey.shade700,
+                    disabledBackgroundColor: Colors.grey.shade400,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text(
+                    'RESET',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _handleUpsertEducation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.secondary,
+                    disabledBackgroundColor: AppColors.secondary.withOpacity(0.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          buttonText,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

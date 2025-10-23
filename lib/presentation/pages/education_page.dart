@@ -120,6 +120,58 @@ class _EducationDashboardPageState extends State<EducationDashboardPage> {
     }
   }
 
+  Future<void> _confirmDeleteEducation(EducationModel education) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Konfirmasi Hapus'),
+          content: Text('Apakah Anda yakin ingin menghapus edukasi "${education.name}"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('Hapus'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      try {
+        await _educationService.deleteEducation(education.id);
+        _refreshEducations();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Edukasi "${education.name}" berhasil dihapus'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gagal menghapus edukasi: $e'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    }
+  }
+
   Widget _buildEducationsTableItem(BuildContext context, int no, EducationModel education) {
     return Container(
       decoration: BoxDecoration(
@@ -161,10 +213,7 @@ class _EducationDashboardPageState extends State<EducationDashboardPage> {
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-              onPressed: () async {
-                await _educationService.deleteEducation(education.id);
-                _refreshEducations();
-              },
+              onPressed: () => _confirmDeleteEducation(education),
             ),
           ],
         ),

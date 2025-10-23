@@ -150,17 +150,17 @@ class _LoginPageState extends State<LoginPage> {
               controller: _passwordController,
               prefixIcon: const Icon(Icons.lock),
             ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () {},
-                child: const Text(
-                  'Lupa Password',
-                  style: TextStyle(color: AppColors.primary),
-                ),
-              ),
-            ),
+            // const SizedBox(height: 8),
+            // Align(
+            //   alignment: Alignment.centerRight,
+            //   child: TextButton(
+            //     onPressed: () {},
+            //     child: const Text(
+            //       'Lupa Password',
+            //       style: TextStyle(color: AppColors.primary),
+            //     ),
+            //   ),
+            // ),
 
             if (_errorMessage != null)
               Padding(

@@ -56,10 +56,10 @@ class InfoCard extends StatelessWidget {
                 GestureDetector(
                   onTap: onPressed,
                   child: const Text(
-                    '>>',
+                    'Lihat Detail',
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: 18,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
