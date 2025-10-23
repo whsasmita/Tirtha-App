@@ -12,13 +12,15 @@ class CreateHemodialysisMonitoring extends StatefulWidget {
 class _CreateHemodialysisMonitoringState
     extends State<CreateHemodialysisMonitoring> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Controllers for form fields
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _tekananSebelumSistolik = TextEditingController();
-  final TextEditingController _tekananSebelumDiastolik = TextEditingController();
+  final TextEditingController _tekananSebelumDiastolik =
+      TextEditingController();
   final TextEditingController _tekananSetelahSistolik = TextEditingController();
-  final TextEditingController _tekananSetelahDiastolik = TextEditingController();
+  final TextEditingController _tekananSetelahDiastolik =
+      TextEditingController();
   final TextEditingController _darahSebelum = TextEditingController();
   final TextEditingController _darahSetelah = TextEditingController();
   final TextEditingController _beratSebelum = TextEditingController();
@@ -47,9 +49,7 @@ class _CreateHemodialysisMonitoringState
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.secondary,
-            ),
+            colorScheme: const ColorScheme.light(primary: AppColors.secondary),
           ),
           child: child!,
         );
@@ -61,6 +61,67 @@ class _CreateHemodialysisMonitoringState
             "${picked.day.toString().padLeft(2, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.year}";
       });
     }
+  }
+
+  void _showResultDialog(
+    String title,
+    String message, {
+    bool isSuccess = true,
+  }) {
+    IconData icon =
+        isSuccess ? Icons.check_circle_outline : Icons.warning_amber_rounded;
+    Color iconColor = isSuccess ? Colors.green : Colors.orange;
+    Color buttonColor = isSuccess ? AppColors.tertiary : Colors.orange;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          icon: Icon(icon, color: iconColor, size: 48),
+          title: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          content: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 16),
+          ),
+          actions: [
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Tutup Dialog
+                  Navigator.of(
+                    context,
+                  ).pop(true); // Kembali ke halaman sebelumnya (sukses)
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: buttonColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _handleReset() {
@@ -357,10 +418,7 @@ class _CreateHemodialysisMonitoringState
           const SizedBox(width: 8),
           const Text(
             'mmHg',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textPrimary,
-            ),
+            style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
           ),
         ],
       ),
@@ -419,10 +477,7 @@ class _CreateHemodialysisMonitoringState
           const SizedBox(width: 8),
           const Text(
             'ml',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textPrimary,
-            ),
+            style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
           ),
         ],
       ),
@@ -481,10 +536,7 @@ class _CreateHemodialysisMonitoringState
           const SizedBox(width: 8),
           const Text(
             'Kg',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textPrimary,
-            ),
+            style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
           ),
         ],
       ),

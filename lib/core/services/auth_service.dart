@@ -1,9 +1,14 @@
-import 'package:tirtha_app/core/services/app_client.dart';   
+import 'package:tirtha_app/core/services/app_client.dart';
 import 'package:dio/dio.dart';
 import 'package:tirtha_app/data/models/user_model.dart';
 
 class AuthService {
-  Future<void> register(String name, String email, String password, String timezone) async {
+  Future<void> register(
+    String name,
+    String email,
+    String password,
+    String timezone,
+  ) async {
     try {
       final response = await ApiClient.dio.post(
         '/auth/register',
@@ -14,9 +19,7 @@ class AuthService {
           'timezone': timezone,
         },
         options: Options(
-          headers: {
-            Headers.contentTypeHeader: Headers.jsonContentType,
-          },
+          headers: {Headers.contentTypeHeader: Headers.jsonContentType},
         ),
       );
 
@@ -29,21 +32,23 @@ class AuthService {
       }
     } on DioException catch (e) {
       if (e.response != null && e.response!.data != null) {
-        throw Exception(e.response!.data['message'] ?? 'Terjadi kesalahan pada server.');
+        throw Exception(
+          e.response!.data['message'] ?? 'Terjadi kesalahan pada server.',
+        );
       }
       throw Exception('Koneksi gagal. Coba lagi nanti.');
     }
   }
 
-  Future<UserModel> login(String email, String password, String? fcmToken) async {
+  Future<UserModel> login(
+    String email,
+    String password,
+    String? fcmToken,
+  ) async {
     try {
       final response = await ApiClient.dio.post(
         '/auth/login',
-        data: {
-          'email': email,
-          'password': password,
-          'fcm_token': fcmToken,
-        },
+        data: {'email': email, 'password': password, 'fcm_token': fcmToken},
         options: Options(
           headers: {Headers.contentTypeHeader: Headers.jsonContentType},
         ),
@@ -55,7 +60,9 @@ class AuthService {
 
         // 🔹 Setelah login berhasil, ambil profil user
         final profileResponse = await ApiClient.dio.get('/profile');
-        final userData = UserModel.fromJson(profileResponse.data);
+        final userDataMap =
+            profileResponse.data['data'] as Map<String, dynamic>;
+        final userData = UserModel.fromJson(userDataMap);
 
         return userData;
       } else {
@@ -83,8 +90,11 @@ class AuthService {
   Future<UserModel> getUserProfile() async {
     try {
       final response = await ApiClient.dio.get('/profile');
-      
-      final userData = UserModel.fromJson(response.data);
+
+      final userDataMap = response.data['data'] as Map<String, dynamic>; 
+    
+    // final userData = UserModel.fromJson(response.data); // <-- BARIS LAMA
+    final userData = UserModel.fromJson(userDataMap);
       return userData;
     } on DioException catch (e) {
       if (e.response != null && e.response!.data != null) {

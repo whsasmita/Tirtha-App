@@ -7,14 +7,24 @@ class ApiClient {
       baseUrl: 'https://tirtapp.fmews.com/api/v1',
       followRedirects: true,
       maxRedirects: 5,
-      connectTimeout: const Duration(seconds: 5),
-      receiveTimeout: const Duration(seconds: 3),
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 10),
     ),
   );
   
   static final _storage = FlutterSecureStorage();
 
   static void init() {
+    dio.interceptors.add(
+    LogInterceptor(
+      requestBody: true,
+      responseBody: true,
+      error: true,
+      requestHeader: true,
+      responseHeader: true,
+      logPrint: (obj) => print("DIO DEBUG: $obj"),
+    ),
+  );
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         final token = await _storage.read(key: 'auth_token');
