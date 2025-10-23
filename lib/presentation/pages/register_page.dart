@@ -5,6 +5,7 @@ import 'package:tirtha_app/presentation/widgets/password_text_field.dart';
 import 'package:tirtha_app/presentation/themes/color.dart';
 import 'package:tirtha_app/routes/app_routes.dart';
 import 'package:tirtha_app/core/services/auth_service.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -34,6 +35,27 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
+  String _getDeviceTimezone() {
+    final now = DateTime.now();
+    final offset = now.timeZoneOffset;
+    
+    final offsetInHours = offset.inHours;
+    
+    switch (offsetInHours) {
+      case 7:
+        return 'Asia/Jakarta';
+      case 8:
+        return 'Asia/Makassar';
+      case 9:
+        return 'Asia/Jayapura';
+      default:
+        final sign = offset.isNegative ? '-' : '+';
+        final hours = offset.inHours.abs().toString().padLeft(2, '0');
+        final minutes = (offset.inMinutes.abs() % 60).toString().padLeft(2, '0');
+        return 'UTC$sign$hours:$minutes';
+    }
+  }
+
   Future<void> _handleRegister() async {
     setState(() {
       _isLoading = true;
@@ -52,20 +74,9 @@ class _RegisterPageState extends State<RegisterPage> {
         final email = _emailController.text.trim();
         final password = _passwordController.text.trim();
         
-        // 🔹 Dapatkan timezone offset dari device (Built-in Flutter, tanpa library)
-        final now = DateTime.now();
-        final offsetInHours = now.timeZoneOffset.inHours;
-        final offsetMinutes = now.timeZoneOffset.inMinutes.remainder(60);
+        final String timezone = _getDeviceTimezone();
         
-        // Format timezone sebagai UTC offset (contoh: "UTC+07:00" untuk WIB)
-        String timezone = 'UTC${offsetInHours >= 0 ? '+' : ''}${offsetInHours.toString().padLeft(2, '0')}';
-        if (offsetMinutes != 0) {
-          timezone += ':${offsetMinutes.abs().toString().padLeft(2, '0')}';
-        } else {
-          timezone += ':00';
-        }
-        
-        print('Timezone detected: $timezone'); // Debug: Output contoh "UTC+07:00"
+        print('Timezone detected: $timezone');
 
         await _authService.register(name, email, password, timezone);
 
