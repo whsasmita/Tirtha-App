@@ -120,9 +120,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(height: 24),
                 
                 if (snapshot.hasData && snapshot.data!.role == 'admin') ...[
-                  const Text(
-                    'Dashboard',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  const Center(
+                    child: Text(
+                      'Dashboard',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Row(

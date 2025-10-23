@@ -23,13 +23,97 @@ class _LoginPageState extends State<LoginPage> {
   final AuthService _authService = AuthService();
 
   bool _isLoading = false;
-  String? _errorMessage;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  /// Menampilkan dialog error
+  void _showErrorDialog(String message) {
+    // Tentukan title berdasarkan message
+    String title = 'Terjadi Kesalahan';
+    IconData icon = Icons.error_outline;
+    Color iconColor = Colors.red;
+
+    if (message.toLowerCase().contains('email atau password')) {
+      title = 'Login Gagal';
+      icon = Icons.lock_outline;
+    } else if (message.toLowerCase().contains('koneksi') || 
+               message.toLowerCase().contains('jaringan')) {
+      title = 'Masalah Koneksi';
+      icon = Icons.wifi_off;
+    } else if (message.toLowerCase().contains('server')) {
+      title = 'Server Bermasalah';
+      icon = Icons.cloud_off;
+    } else if (message.toLowerCase().contains('tidak lengkap') ||
+               message.toLowerCase().contains('tidak boleh kosong')) {
+      title = 'Input Tidak Lengkap';
+      icon = Icons.warning_amber_rounded;
+      iconColor = Colors.orange;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                icon,
+                color: iconColor,
+                size: 28,
+              ),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(fontSize: 16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: AppColors.secondary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   /// Mendapatkan FCM Token dari Firebase
@@ -61,16 +145,18 @@ class _LoginPageState extends State<LoginPage> {
 
     // Validasi input
     if (email.isEmpty || password.isEmpty) {
-      setState(() {
-        _errorMessage = 'Email dan Password tidak boleh kosong.';
-        _isLoading = false;
-      });
+      _showErrorDialog('Email dan Password tidak boleh kosong.');
+      return;
+    }
+
+    // Validasi format email sederhana
+    if (!email.contains('@') || !email.contains('.')) {
+      _showErrorDialog('Format email tidak valid.');
       return;
     }
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
     try {
@@ -102,13 +188,27 @@ class _LoginPageState extends State<LoginPage> {
       }
     } catch (e) {
       print('❌ Error during login: $e');
-      setState(() {
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
-      });
+      
+      // Ambil pesan error
+      String errorMessage = e.toString();
+      
+      // Hapus prefix "Exception: " jika ada
+      if (errorMessage.startsWith('Exception: ')) {
+        errorMessage = errorMessage.substring('Exception: '.length);
+      }
+      
+      print('📝 Error message: $errorMessage');
+      
+      // Tampilkan dialog error dengan pesan dari AuthService
+      if (mounted) {
+        _showErrorDialog(errorMessage);
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -116,89 +216,83 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 80),
-            Center(
-              child: Image.asset('assets/logo_tirtha_app.png', height: 200),
-            ),
-            const SizedBox(height: 5),
-            const Text(
-              'Email',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            AppTextField(
-              hintText: 'Masukkan email',
-              controller: _emailController,
-              prefixIcon: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Icon(Icons.person_outline, color: AppColors.primary),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 60),
+              Center(
+                child: Image.asset('assets/logo_tirtha_app.png', height: 200),
               ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Password',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            PasswordTextField(
-              hintText: 'Password',
-              controller: _passwordController,
-              prefixIcon: const Icon(Icons.lock),
-            ),
-            // const SizedBox(height: 8),
-            // Align(
-            //   alignment: Alignment.centerRight,
-            //   child: TextButton(
-            //     onPressed: () {},
-            //     child: const Text(
-            //       'Lupa Password',
-            //       style: TextStyle(color: AppColors.primary),
-            //     ),
-            //   ),
-            // ),
+              const SizedBox(height: 5),
+              const Text(
+                'Email',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              AppTextField(
+                hintText: 'Masukkan email',
+                controller: _emailController,
+                prefixIcon: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Icon(Icons.person_outline, color: AppColors.primary),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Password',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              PasswordTextField(
+                hintText: 'Password',
+                controller: _passwordController,
+                prefixIcon: const Icon(Icons.lock),
+              ),
+              // const SizedBox(height: 8),
+              // Align(
+              //   alignment: Alignment.centerRight,
+              //   child: TextButton(
+              //     onPressed: () {},
+              //     child: const Text(
+              //       'Lupa Password',
+              //       style: TextStyle(color: AppColors.primary),
+              //     ),
+              //   ),
+              // ),
 
-            if (_errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.red),
-                  textAlign: TextAlign.center,
-                ),
+              const SizedBox(height: 24),
+              AppButton(
+                text: _isLoading ? 'Loading...' : 'MASUK',
+                onPressed: _isLoading ? () {} : _handleLogin,
               ),
-            const SizedBox(height: 24),
-            AppButton(
-              text: _isLoading ? 'Loading...' : 'MASUK',
-              onPressed: _isLoading ? () {} : _handleLogin,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Belum Punya Akun? ',
-                  style: TextStyle(color: AppColors.textPrimary),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(context, AppRoutes.register);
-                  },
-                  child: const Text(
-                    'BUAT AKUN',
-                    style: TextStyle(
-                      color: AppColors.secondary,
-                      fontWeight: FontWeight.bold,
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Belum Punya Akun? ',
+                    style: TextStyle(color: AppColors.textPrimary),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, AppRoutes.register);
+                    },
+                    child: const Text(
+                      'BUAT AKUN',
+                      style: TextStyle(
+                        color: AppColors.secondary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
