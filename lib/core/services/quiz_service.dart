@@ -35,9 +35,18 @@ class QuizService {
     }
   }
 
-  Future<List<QuizModel>> fetchAllQuizzes() async {
+  Future<List<QuizModel>> fetchAllQuizzes({
+    int page = 1,
+    int limit = 10,
+  }) async {
     try {
-      final response = await ApiClient.dio.get('/quizzes/');
+      final response = await ApiClient.dio.get(
+        '/quizzes/',
+        queryParameters: {
+          'page': page,
+          'limit': limit,
+        },
+      );
       
       if (response.data != null && response.data['data'] is List) {
         List<dynamic> dataList = response.data['data'];
@@ -49,10 +58,63 @@ class QuizService {
       
     } on DioException catch (e) {
       String errorMessage = 'Gagal memuat kuis. Coba lagi.';
+      
       if (e.response != null && e.response!.data is Map) {
-         errorMessage = e.response!.data['message']?.toString() ?? e.response!.statusMessage ?? 'Permintaan gagal.';
+        errorMessage = e.response!.data['message']?.toString() ?? 
+                      e.response!.statusMessage ?? 
+                      'Permintaan gagal.';
+      } else if (e.type == DioExceptionType.connectionTimeout) {
+        errorMessage = 'Koneksi timeout. Periksa internet Anda.';
+      } else if (e.type == DioExceptionType.receiveTimeout) {
+        errorMessage = 'Server tidak merespons. Coba lagi.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage = 'Tidak dapat terhubung ke server.';
       }
+      
       throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Terjadi kesalahan: ${e.toString()}');
+    }
+  }
+
+  /// Fetch quizzes dengan total count untuk pagination
+  Future<QuizResponse> fetchQuizzesWithMeta({
+    int page = 1,
+    int limit = 10,
+  }) async {
+    try {
+      final response = await ApiClient.dio.get(
+        '/quizzes/',
+        queryParameters: {
+          'page': page,
+          'limit': limit,
+        },
+      );
+      
+      if (response.data != null) {
+        return QuizResponse.fromJson(response.data);
+      }
+      
+      throw Exception('Format data kuis dari server tidak valid.');
+      
+    } on DioException catch (e) {
+      String errorMessage = 'Gagal memuat kuis. Coba lagi.';
+      
+      if (e.response != null && e.response!.data is Map) {
+        errorMessage = e.response!.data['message']?.toString() ?? 
+                      e.response!.statusMessage ?? 
+                      'Permintaan gagal.';
+      } else if (e.type == DioExceptionType.connectionTimeout) {
+        errorMessage = 'Koneksi timeout. Periksa internet Anda.';
+      } else if (e.type == DioExceptionType.receiveTimeout) {
+        errorMessage = 'Server tidak merespons. Coba lagi.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage = 'Tidak dapat terhubung ke server.';
+      }
+      
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Terjadi kesalahan: ${e.toString()}');
     }
   }
 

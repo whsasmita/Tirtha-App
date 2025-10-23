@@ -29,3 +29,44 @@ class EducationModel {
     );
   }
 }
+
+class EducationResponse {
+  final List<EducationModel> data;
+  final int? total;
+  final int? page;
+  final int? limit;
+  final int? totalPages;
+
+  EducationResponse({
+    required this.data,
+    this.total,
+    this.page,
+    this.limit,
+    this.totalPages,
+  });
+
+  factory EducationResponse.fromJson(Map<String, dynamic> json) {
+    List<EducationModel> educations = [];
+    
+    if (json['data'] is List) {
+      educations = (json['data'] as List)
+          .map((item) => EducationModel.fromJson(item))
+          .toList();
+    }
+
+    return EducationResponse(
+      data: educations,
+      total: json['total'] as int?,
+      page: json['page'] as int?,
+      limit: json['limit'] as int?,
+      totalPages: json['total_pages'] as int?,
+    );
+  }
+
+  bool get hasMore {
+    if (totalPages != null && page != null) {
+      return page! < totalPages!;
+    }
+    return false;
+  }
+}

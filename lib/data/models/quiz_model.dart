@@ -26,3 +26,44 @@ class QuizModel {
     );
   }
 }
+
+class QuizResponse {
+  final List<QuizModel> data;
+  final int? total;
+  final int? page;
+  final int? limit;
+  final int? totalPages;
+
+  QuizResponse({
+    required this.data,
+    this.total,
+    this.page,
+    this.limit,
+    this.totalPages,
+  });
+
+  factory QuizResponse.fromJson(Map<String, dynamic> json) {
+    List<QuizModel> quizzes = [];
+    
+    if (json['data'] is List) {
+      quizzes = (json['data'] as List)
+          .map((item) => QuizModel.fromJson(item))
+          .toList();
+    }
+
+    return QuizResponse(
+      data: quizzes,
+      total: json['total'] as int?,
+      page: json['page'] as int?,
+      limit: json['limit'] as int?,
+      totalPages: json['total_pages'] as int?,
+    );
+  }
+
+  bool get hasMore {
+    if (totalPages != null && page != null) {
+      return page! < totalPages!;
+    }
+    return false;
+  }
+}
