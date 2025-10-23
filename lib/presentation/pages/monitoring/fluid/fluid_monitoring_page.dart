@@ -2,42 +2,83 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:tirtha_app/presentation/themes/color.dart';
 import 'package:tirtha_app/routes/app_routes.dart';
+import 'package:tirtha_app/core/services/fluid_service.dart';
+import 'package:tirtha_app/data/models/fluid_model.dart';
+import 'package:intl/intl.dart';
 
-class FluidMonitoringPage extends StatelessWidget {
+class FluidMonitoringPage extends StatefulWidget {
   const FluidMonitoringPage({Key? key}) : super(key: key);
 
-  // Sample data - replace with actual data from your state management
-  List<Map<String, dynamic>> _getSampleData() {
-    return [
-      {
-        'tanggal': '10-10-2024',
-        'cairanMasuk': 2000, // in cc
-        'cairanKeluar': 1500, // in cc
-      },
-      {
-        'tanggal': '11-10-2024',
-        'cairanMasuk': 2500,
-        'cairanKeluar': 1800,
-      },
-      {
-        'tanggal': '12-10-2024',
-        'cairanMasuk': 1800,
-        'cairanKeluar': 1600,
-      },
-      {
-        'tanggal': '13-10-2024',
-        'cairanMasuk': 2200,
-        'cairanKeluar': 1700,
-      },
-      {
-        'tanggal': '14-10-2024',
-        'cairanMasuk': 2400,
-        'cairanKeluar': 1900,
-      },
-    ];
+  @override
+  State<FluidMonitoringPage> createState() => _FluidMonitoringPageState();
+}
+
+class _FluidMonitoringPageState extends State<FluidMonitoringPage> {
+  final FluidService _fluidService = FluidService();
+  List<FluidBalanceLogResponseDTO> _fluidData = [];
+  bool _isLoading = false;
+  String _selectedFilter = 'today'; // 'today' or 'week'
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFluidData();
   }
 
-  void _showInfoDialog(BuildContext context) {
+  Future<void> _loadFluidData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final data = await _fluidService.getFluids();
+      if (mounted) {
+        setState(() {
+          _fluidData = data;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memuat data: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  List<FluidBalanceLogResponseDTO> _getFilteredData() {
+    if (_fluidData.isEmpty) return [];
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    if (_selectedFilter == 'today') {
+      // Filter for today only
+      return _fluidData.where((log) {
+        final logDate = DateTime.parse(log.logDate);
+        final logDay = DateTime(logDate.year, logDate.month, logDate.day);
+        return logDay.isAtSameMomentAs(today);
+      }).toList();
+    } else {
+      // Filter for last 7 days
+      final sevenDaysAgo = today.subtract(const Duration(days: 6));
+      return _fluidData.where((log) {
+        final logDate = DateTime.parse(log.logDate);
+        final logDay = DateTime(logDate.year, logDate.month, logDate.day);
+        return logDay.isAfter(sevenDaysAgo.subtract(const Duration(days: 1))) &&
+               logDay.isBefore(today.add(const Duration(days: 1)));
+      }).toList()..sort((a, b) => a.logDate.compareTo(b.logDate));
+    }
+  }
+
+  void _showInfoDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -92,7 +133,7 @@ class FluidMonitoringPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Pilihan Cairan',
+                            'Cairan Masuk',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],
@@ -113,7 +154,7 @@ class FluidMonitoringPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Pilihan Cairan',
+                            'Cairan Keluar',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],
@@ -176,12 +217,12 @@ class FluidMonitoringPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fluidData = _getSampleData();
+    final filteredData = _getFilteredData();
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: AppColors.secondary,
+        backgroundColor: AppColors.tertiary,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textSecondary),
@@ -197,236 +238,311 @@ class FluidMonitoringPage extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Rekap Pemantauan Cairan',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => _showInfoDialog(context),
-                  icon: Icon(
-                    Icons.help_outline,
-                    color: AppColors.tertiary,
-                    size: 28,
-                  ),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Chart Container
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.tertiary),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Grafik Pemantauan Cairan (cc)',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+            )
+          : RefreshIndicator(
+              onRefresh: _loadFluidData,
+              color: AppColors.tertiary,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Rekap Pemantauan Cairan',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: _showInfoDialog,
+                          icon: const Icon(
+                            Icons.help_outline,
+                            color: AppColors.tertiary,
+                            size: 28,
+                          ),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  // Legend
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildLegend('Cairan Masuk', Colors.blue),
-                      const SizedBox(width: 24),
-                      _buildLegend('Cairan Keluar', Colors.orange),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    height: 250,
-                    child: fluidData.isEmpty
-                        ? Center(
-                            child: Text(
-                              'Belum ada data pemantauan cairan',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
+                    const SizedBox(height: 16),
+                    // Filter Dropdown
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedFilter,
+                          isExpanded: true,
+                          icon: const Icon(Icons.keyboard_arrow_down),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'today',
+                              child: Text(
+                                'Per Hari',
+                                style: TextStyle(fontSize: 14),
                               ),
                             ),
-                          )
-                        : BarChart(
-                            BarChartData(
-                              alignment: BarChartAlignment.spaceAround,
-                              maxY: 3000,
-                              minY: 0,
-                              groupsSpace: 12,
-                              barTouchData: BarTouchData(
-                                enabled: true,
-                                touchTooltipData: BarTouchTooltipData(
-                                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                                    String label = rodIndex == 0 ? 'Masuk' : 'Keluar';
-                                    return BarTooltipItem(
-                                      '$label\n${rod.toY.toInt()} cc',
-                                      const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                      ),
-                                    );
-                                  },
-                                ),
+                            DropdownMenuItem(
+                              value: 'week',
+                              child: Text(
+                                '7 Hari Terakhir',
+                                style: TextStyle(fontSize: 14),
                               ),
-                              titlesData: FlTitlesData(
-                                show: true,
-                                bottomTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    getTitlesWidget: (value, meta) {
-                                      if (value.toInt() >= 0 && value.toInt() < fluidData.length) {
-                                        final date = fluidData[value.toInt()]['tanggal'];
-                                        final parts = date.split('-');
-                                        return Padding(
-                                          padding: const EdgeInsets.only(top: 8.0),
-                                          child: Text(
-                                            '${parts[0]}/${parts[1]}',
-                                            style: const TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                      return const Text('');
-                                    },
-                                    reservedSize: 30,
-                                  ),
-                                ),
-                                leftTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    reservedSize: 40,
-                                    getTitlesWidget: (value, meta) {
-                                      return Text(
-                                        '${value.toInt()}',
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                topTitles: const AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false),
-                                ),
-                                rightTitles: const AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false),
-                                ),
-                              ),
-                              borderData: FlBorderData(
-                                show: true,
-                                border: Border(
-                                  bottom: BorderSide(color: Colors.grey[300]!),
-                                  left: BorderSide(color: Colors.grey[300]!),
-                                ),
-                              ),
-                              gridData: FlGridData(
-                                show: true,
-                                drawVerticalLine: false,
-                                horizontalInterval: 500,
-                                getDrawingHorizontalLine: (value) {
-                                  return FlLine(
-                                    color: Colors.grey[200]!,
-                                    strokeWidth: 1,
-                                  );
-                                },
-                              ),
-                              barGroups: fluidData.asMap().entries.map((entry) {
-                                return BarChartGroupData(
-                                  x: entry.key,
-                                  barRods: [
-                                    BarChartRodData(
-                                      toY: entry.value['cairanMasuk'].toDouble(),
-                                      color: Colors.blue,
-                                      width: 12,
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(4),
-                                        topRight: Radius.circular(4),
-                                      ),
-                                    ),
-                                    BarChartRodData(
-                                      toY: entry.value['cairanKeluar'].toDouble(),
-                                      color: Colors.orange,
-                                      width: 12,
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(4),
-                                        topRight: Radius.circular(4),
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }).toList(),
+                            ),
+                          ],
+                          onChanged: (String? value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedFilter = value;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Chart Container
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Grafik Pemantauan Cairan (cc)',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
                             ),
                           ),
-                  ),
-                ],
+                          const SizedBox(height: 20),
+                          // Legend
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _buildLegend('Cairan Masuk', Colors.blue),
+                              const SizedBox(width: 24),
+                              _buildLegend('Cairan Keluar', Colors.orange),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            height: 250,
+                            child: filteredData.isEmpty
+                                ? Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.water_drop_outlined,
+                                          size: 48,
+                                          color: Colors.grey[400],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Belum ada data pemantauan cairan',
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : BarChart(
+                                    BarChartData(
+                                      alignment: BarChartAlignment.spaceAround,
+                                      maxY: _calculateMaxY(filteredData),
+                                      minY: 0,
+                                      groupsSpace: 12,
+                                      barTouchData: BarTouchData(
+                                        enabled: true,
+                                        touchTooltipData: BarTouchTooltipData(
+                                          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                                            String label = rodIndex == 0 ? 'Masuk' : 'Keluar';
+                                            return BarTooltipItem(
+                                              '$label\n${rod.toY.toInt()} cc',
+                                              const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      titlesData: FlTitlesData(
+                                        show: true,
+                                        bottomTitles: AxisTitles(
+                                          sideTitles: SideTitles(
+                                            showTitles: true,
+                                            getTitlesWidget: (value, meta) {
+                                              if (value.toInt() >= 0 && value.toInt() < filteredData.length) {
+                                                final log = filteredData[value.toInt()];
+                                                final date = DateTime.parse(log.logDate);
+                                                return Padding(
+                                                  padding: const EdgeInsets.only(top: 8.0),
+                                                  child: Text(
+                                                    DateFormat('dd/MM').format(date),
+                                                    style: const TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                              return const Text('');
+                                            },
+                                            reservedSize: 30,
+                                          ),
+                                        ),
+                                        leftTitles: AxisTitles(
+                                          sideTitles: SideTitles(
+                                            showTitles: true,
+                                            reservedSize: 40,
+                                            getTitlesWidget: (value, meta) {
+                                              return Text(
+                                                '${value.toInt()}',
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                        topTitles: const AxisTitles(
+                                          sideTitles: SideTitles(showTitles: false),
+                                        ),
+                                        rightTitles: const AxisTitles(
+                                          sideTitles: SideTitles(showTitles: false),
+                                        ),
+                                      ),
+                                      borderData: FlBorderData(
+                                        show: true,
+                                        border: Border(
+                                          bottom: BorderSide(color: Colors.grey[300]!),
+                                          left: BorderSide(color: Colors.grey[300]!),
+                                        ),
+                                      ),
+                                      gridData: FlGridData(
+                                        show: true,
+                                        drawVerticalLine: false,
+                                        horizontalInterval: 500,
+                                        getDrawingHorizontalLine: (value) {
+                                          return FlLine(
+                                            color: Colors.grey[200]!,
+                                            strokeWidth: 1,
+                                          );
+                                        },
+                                      ),
+                                      barGroups: filteredData.asMap().entries.map((entry) {
+                                        return BarChartGroupData(
+                                          x: entry.key,
+                                          barRods: [
+                                            BarChartRodData(
+                                              toY: entry.value.intakeCC.toDouble(),
+                                              color: Colors.blue,
+                                              width: 12,
+                                              borderRadius: const BorderRadius.only(
+                                                topLeft: Radius.circular(4),
+                                                topRight: Radius.circular(4),
+                                              ),
+                                            ),
+                                            BarChartRodData(
+                                              toY: entry.value.outputCC.toDouble(),
+                                              color: Colors.orange,
+                                              width: 12,
+                                              borderRadius: const BorderRadius.only(
+                                                topLeft: Radius.circular(4),
+                                                topRight: Radius.circular(4),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Summary Cards
+                    Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildSummaryCard(
+                                'Total Cairan Masuk',
+                                _calculateTotalIntake(filteredData),
+                                Colors.blue,
+                                Icons.water_drop,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildSummaryCard(
+                                'Total Cairan Keluar',
+                                _calculateTotalOutput(filteredData),
+                                Colors.orange,
+                                Icons.water_drop_outlined,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        _buildBalanceCard(
+                          'Rata-rata Cairan',
+                          _calculateBalance(filteredData),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-            // Summary Cards
-            Row(
-              children: [
-                Expanded(
-                  child: _buildSummaryCard(
-                    'Total Cairan Masuk',
-                    _calculateTotal(fluidData, 'cairanMasuk'),
-                    Colors.blue,
-                    Icons.water_drop,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildSummaryCard(
-                    'Total Cairan Keluar',
-                    _calculateTotal(fluidData, 'cairanKeluar'),
-                    Colors.orange,
-                    Icons.water_drop_outlined,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Show info dialog first, then navigate
-          _showInfoDialog(context);
-          Future.delayed(const Duration(seconds: 2), () {
-            if (context.mounted) {
-              Navigator.pushNamed(context, AppRoutes.createFluidMonitoring);
+        onPressed: () async {
+          if (context.mounted) {
+            final result = await Navigator.pushNamed(
+              context,
+              AppRoutes.createFluidMonitoring,
+            );
+            
+            // Reload data if result is true (data was saved)
+            if (result == true) {
+              _loadFluidData();
             }
-          });
+          }
         },
         backgroundColor: AppColors.tertiary,
         child: const Icon(
@@ -501,7 +617,120 @@ class FluidMonitoringPage extends StatelessWidget {
     );
   }
 
-  int _calculateTotal(List<Map<String, dynamic>> data, String key) {
-    return data.fold(0, (sum, item) => sum + (item[key] as int));
+  Widget _buildBalanceCard(String title, int value) {
+    final isPositive = value >= 0;
+    final color = isPositive ? Colors.green : Colors.red;
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isPositive ? Icons.trending_up : Icons.trending_down,
+            color: color,
+            size: 32,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(
+                      '${isPositive ? '+' : ''}$value cc',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (!isPositive)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Defisit',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red[700],
+                          ),
+                        ),
+                      ),
+                    if (isPositive && value > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Surplus',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.green[700],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int _calculateTotalIntake(List<FluidBalanceLogResponseDTO> data) {
+    return data.fold(0, (sum, item) => sum + item.intakeCC);
+  }
+
+  int _calculateTotalOutput(List<FluidBalanceLogResponseDTO> data) {
+    return data.fold(0, (sum, item) => sum + item.outputCC);
+  }
+
+  int _calculateBalance(List<FluidBalanceLogResponseDTO> data) {
+    return data.fold(0, (sum, item) => sum + item.balanceCC);
+  }
+
+  double _calculateMaxY(List<FluidBalanceLogResponseDTO> data) {
+    if (data.isEmpty) return 3000;
+    
+    int maxValue = 0;
+    for (var item in data) {
+      if (item.intakeCC > maxValue) maxValue = item.intakeCC;
+      if (item.outputCC > maxValue) maxValue = item.outputCC;
+    }
+    
+    // Round up to nearest 500
+    return ((maxValue / 500).ceil() * 500).toDouble() + 500;
   }
 }
