@@ -18,6 +18,7 @@ class _FluidMonitoringPageState extends State<FluidMonitoringPage> {
   List<FluidBalanceLogResponseDTO> _fluidData = [];
   bool _isLoading = false;
   String _selectedFilter = 'today'; // 'today' or 'week'
+  bool _hasShownInitialWarning = false;
 
   @override
   void initState() {
@@ -37,6 +38,11 @@ class _FluidMonitoringPageState extends State<FluidMonitoringPage> {
           _fluidData = data;
           _isLoading = false;
         });
+        
+        // Show warning if balance >= 500 for today and not shown yet
+        if (!_hasShownInitialWarning && _selectedFilter == 'today') {
+          _checkAndShowWarning();
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -49,6 +55,20 @@ class _FluidMonitoringPageState extends State<FluidMonitoringPage> {
             backgroundColor: Colors.red,
           ),
         );
+      }
+    }
+  }
+
+  void _checkAndShowWarning() {
+    final filteredData = _getFilteredData();
+    if (filteredData.isNotEmpty) {
+      final balance = _calculateBalance(filteredData);
+      if (balance >= 500) {
+        _hasShownInitialWarning = true;
+        // Show warning after a short delay to ensure UI is ready
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showBalanceWarningDialog(balance);
+        });
       }
     }
   }
@@ -202,6 +222,86 @@ class _FluidMonitoringPageState extends State<FluidMonitoringPage> {
     );
   }
 
+  void _showBalanceWarningDialog(int balance) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          icon: Icon(
+            Icons.warning_amber_rounded,
+            color: Colors.orange,
+            size: 64,
+          ),
+          title: const Text(
+            'Peringatan Rata-rata Cairan',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: Colors.orange,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: Text(
+                  'Rata-rata cairan Anda saat ini adalah $balance cc. Harap segera konsultasikan dengan dokter atau perawat untuk pemantauan lebih lanjut.',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Rata-rata cairan lebih dari 500 cc memerlukan perhatian medis.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            Center(
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                ),
+                child: const Text(
+                  'Mengerti',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildOptionItem(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -218,6 +318,8 @@ class _FluidMonitoringPageState extends State<FluidMonitoringPage> {
   @override
   Widget build(BuildContext context) {
     final filteredData = _getFilteredData();
+    final balance = _calculateBalance(filteredData);
+    final hasWarning = _selectedFilter == 'today' && balance >= 500;
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -522,7 +624,8 @@ class _FluidMonitoringPageState extends State<FluidMonitoringPage> {
                         const SizedBox(height: 12),
                         _buildBalanceCard(
                           'Rata-rata Cairan',
-                          _calculateBalance(filteredData),
+                          balance,
+                          hasWarning: hasWarning,
                         ),
                       ],
                     ),
@@ -540,6 +643,7 @@ class _FluidMonitoringPageState extends State<FluidMonitoringPage> {
             
             // Reload data if result is true (data was saved)
             if (result == true) {
+              _hasShownInitialWarning = false; // Reset flag to show warning again if needed
               _loadFluidData();
             }
           }
@@ -617,94 +721,142 @@ class _FluidMonitoringPageState extends State<FluidMonitoringPage> {
     );
   }
 
-  Widget _buildBalanceCard(String title, int value) {
+  Widget _buildBalanceCard(String title, int value, {bool hasWarning = false}) {
     final isPositive = value >= 0;
     final color = isPositive ? Colors.green : Colors.red;
     
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: hasWarning ? () => _showBalanceWarningDialog(value) : null,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: hasWarning ? Colors.orange.withOpacity(0.5) : color.withOpacity(0.3),
+            width: hasWarning ? 2 : 1,
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(
-            isPositive ? Icons.trending_up : Icons.trending_down,
-            color: color,
-            size: 32,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[600],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isPositive ? Icons.trending_up : Icons.trending_down,
+              color: color,
+              size: 32,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      if (hasWarning) ...[
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          color: Colors.orange,
+                          size: 18,
+                        ),
+                      ],
+                    ],
                   ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      '${isPositive ? '+' : ''}$value cc',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: color,
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        '${isPositive ? '+' : ''}$value cc',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (!isPositive)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.red[50],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'Defisit',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.red[700],
+                            ),
+                          ),
+                        ),
+                      if (isPositive && value > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.green[50],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'Surplus',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green[700],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  if (hasWarning)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[50],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              size: 12,
+                              color: Colors.orange[700],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Ketuk untuk melihat peringatan',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.orange[700],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    if (!isPositive)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.red[50],
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'Defisit',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.red[700],
-                          ),
-                        ),
-                      ),
-                    if (isPositive && value > 0)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.green[50],
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'Surplus',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.green[700],
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

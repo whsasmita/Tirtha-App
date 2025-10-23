@@ -290,6 +290,76 @@ class _CreateFluidMonitoringPageState extends State<CreateFluidMonitoringPage> {
     );
   }
 
+  Future<void> _showWarningDialog(String warningMessage) async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          icon: Icon(
+            Icons.warning_amber_rounded,
+            color: Colors.orange,
+            size: 64,
+          ),
+          title: const Text(
+            'Peringatan Rata-rata Cairan',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: Colors.orange,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: Text(
+                  warningMessage,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            Center(
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                ),
+                child: const Text(
+                  'Mengerti',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showSubmitConfirmationDialog() {
     showDialog(
       context: context,
@@ -402,23 +472,26 @@ class _CreateFluidMonitoringPageState extends State<CreateFluidMonitoringPage> {
       final response = await _fluidService.createFluid(fluidData);
 
       if (mounted) {
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              response.warningMessage != null 
-                ? 'Data berhasil disimpan. ${response.warningMessage}'
-                : 'Data berhasil disimpan',
-            ),
-            backgroundColor: response.warningMessage != null 
-              ? Colors.orange 
-              : Colors.green,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        setState(() {
+          _isLoading = false;
+        });
 
-        // Navigate back after a short delay
-        Future.delayed(const Duration(milliseconds: 500), () {
+        // Show warning dialog if warning message exists
+        if (response.warningMessage != null && response.warningMessage!.isNotEmpty) {
+          await _showWarningDialog(response.warningMessage!);
+        } else {
+          // Show success snackbar
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Data berhasil disimpan'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+
+        // Navigate back after dialog/snackbar
+        Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) {
             Navigator.pop(context, true); // Return true to indicate success
           }
@@ -426,6 +499,10 @@ class _CreateFluidMonitoringPageState extends State<CreateFluidMonitoringPage> {
       }
     } catch (e) {
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal menyimpan data: ${e.toString()}'),
@@ -433,12 +510,6 @@ class _CreateFluidMonitoringPageState extends State<CreateFluidMonitoringPage> {
             duration: const Duration(seconds: 3),
           ),
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
       }
     }
   }
