@@ -14,11 +14,11 @@ class CreateControlScheduleDTO {
 
 class UpdateControlScheduleDTO {
   final String controlDate;
-  final bool isActive;
+  final bool isActive; // Sekarang optional dengan default true
 
   UpdateControlScheduleDTO({
     required this.controlDate,
-    required this.isActive,
+    this.isActive = true, // DEFAULT VALUE
   });
 
   Map<String, dynamic> toJson() {

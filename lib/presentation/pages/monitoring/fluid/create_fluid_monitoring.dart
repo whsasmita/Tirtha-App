@@ -69,6 +69,21 @@ class _CreateFluidMonitoringPageState extends State<CreateFluidMonitoringPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
+                // Gambar gelas belimbing
+                Image.asset(
+                  'assets/gelas_blimbing.png',
+                  width: 100,
+                  height: 100,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(
+                      Icons.local_drink,
+                      size: 80,
+                      color: Colors.teal[300],
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -548,7 +563,7 @@ class _CreateFluidMonitoringPageState extends State<CreateFluidMonitoringPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        backgroundColor: AppColors.secondary,
+        backgroundColor: AppColors.tertiary,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),

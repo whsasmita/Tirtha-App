@@ -5,7 +5,6 @@ import 'package:tirtha_app/presentation/widgets/password_text_field.dart';
 import 'package:tirtha_app/presentation/themes/color.dart';
 import 'package:tirtha_app/routes/app_routes.dart';
 import 'package:tirtha_app/core/services/auth_service.dart';
-import 'package:timezone/timezone.dart' as tz;
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);

@@ -14,7 +14,7 @@ class MonitoringPage extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textSecondary),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.of(context).pushReplacementNamed(AppRoutes.home),
         ),
         title: const Text(
           'PEMANTAUAN',

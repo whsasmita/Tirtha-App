@@ -1,7 +1,7 @@
 class CreateDrugScheduleDTO {
   final String drugName;
   final String dose;
-  final String scheduleDate;
+  final String scheduleDate; // YYYY-MM-DD format
   final bool at06;
   final bool at12;
   final bool at18;
@@ -34,7 +34,7 @@ class UpdateDrugScheduleDTO {
   final bool at06;
   final bool at12;
   final bool at18;
-  final bool isActive;
+  final bool isActive; // Sekarang optional dengan default true
 
   UpdateDrugScheduleDTO({
     required this.drugName,
@@ -43,7 +43,7 @@ class UpdateDrugScheduleDTO {
     required this.at06,
     required this.at12,
     required this.at18,
-    required this.isActive,
+    this.isActive = true, // DEFAULT VALUE
   });
 
   Map<String, dynamic> toJson() {
@@ -84,8 +84,8 @@ class DrugScheduleResponseDTO {
 
   factory DrugScheduleResponseDTO.fromJson(Map<String, dynamic> json) {
     return DrugScheduleResponseDTO(
-      id: json['id'] as int,
-      userId: json['user_id'] as int,
+      id: (json['id'] as num).toInt(),
+      userId: (json['user_id'] as num).toInt(),
       drugName: json['drug_name'] as String,
       dose: json['dose'] as String,
       scheduleDate: json['schedule_date'] as String,

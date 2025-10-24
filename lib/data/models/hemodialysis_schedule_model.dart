@@ -14,11 +14,11 @@ class CreateHemodialysisScheduleDTO {
 
 class UpdateHemodialysisScheduleDTO {
   final String scheduleDate;
-  final bool isActive;
+  final bool isActive; // Sekarang optional dengan default true
 
   UpdateHemodialysisScheduleDTO({
     required this.scheduleDate,
-    required this.isActive,
+    this.isActive = true, // DEFAULT VALUE
   });
 
   Map<String, dynamic> toJson() {

@@ -98,129 +98,147 @@ class _FluidMonitoringPageState extends State<FluidMonitoringPage> {
     }
   }
 
-  void _showInfoDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Keterangan Satuan Cairan',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+  // Update untuk method _showInfoDialog() di FluidMonitoringPage
+// Ganti method ini di dalam class _FluidMonitoringPageState
+
+void _showInfoDialog() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Keterangan Satuan Cairan',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.teal[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.teal[200]!),
+              ),
+              const SizedBox(height: 20),
+              // Gambar gelas belimbing
+              Image.asset(
+                'assets/gelas_blimbing.png',
+                width: 100,
+                height: 100,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(
+                    Icons.local_drink,
+                    size: 80,
+                    color: Colors.teal[300],
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.teal[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.teal[200]!),
+                ),
+                child: const Text(
+                  '250 cc = 1 gelas belimbing',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.teal,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Pilihan Cairan',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Cairan Masuk',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildOptionItem('250 cc'),
+                        _buildOptionItem('500 cc'),
+                        _buildOptionItem('750 cc'),
+                        _buildOptionItem('1000 cc'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Cairan Keluar',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildOptionItem('0 cc'),
+                        _buildOptionItem('50 cc'),
+                        _buildOptionItem('250 cc'),
+                        _buildOptionItem('500 cc'),
+                        _buildOptionItem('750 cc'),
+                        _buildOptionItem('1000 cc'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.tertiary,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   child: const Text(
-                    '250 cc = 1 gelas belimbing',
+                    'Tutup',
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.teal,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Pilihan Cairan',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Cairan Masuk',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          _buildOptionItem('250 cc'),
-                          _buildOptionItem('500 cc'),
-                          _buildOptionItem('750 cc'),
-                          _buildOptionItem('1000 cc'),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Cairan Keluar',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          _buildOptionItem('0 cc'),
-                          _buildOptionItem('50 cc'),
-                          _buildOptionItem('250 cc'),
-                          _buildOptionItem('500 cc'),
-                          _buildOptionItem('750 cc'),
-                          _buildOptionItem('1000 cc'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.tertiary,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'Tutup',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   void _showBalanceWarningDialog(int balance) {
     showDialog(

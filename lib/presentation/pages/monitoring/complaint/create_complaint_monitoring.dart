@@ -4,6 +4,9 @@ import 'package:tirtha_app/core/services/complaint_service.dart';
 import 'package:tirtha_app/data/models/complain_model.dart';
 import 'package:tirtha_app/routes/app_routes.dart';
 
+// Assuming AppColors is a class with static const Color members,
+// and you have ComplaintService, Complaint model, and AppRoutes defined elsewhere.
+
 class CreateComplaintMonitoring extends StatefulWidget {
   const CreateComplaintMonitoring({Key? key}) : super(key: key);
 
@@ -27,13 +30,74 @@ class _CreateComplaintMonitoringState extends State<CreateComplaintMonitoring> {
   final Set<String> selectedComplaints = {};
   bool _isLoading = false;
 
+  /// --- Dialog Handlers ---
+
+  // New: Confirmation Dialog for Reset
+  void _handleResetConfirmation() {
+    if (selectedComplaints.isEmpty) {
+      // No need to confirm if nothing is selected
+      _handleReset();
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: const Text(
+            'Konfirmasi Reset',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            'Apakah Anda yakin ingin menghapus semua keluhan yang telah dipilih?',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(), // Close dialog
+              child: const Text(
+                'TIDAK',
+                style: TextStyle(color: AppColors.textPrimary),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                _handleReset(); // Proceed with reset
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.secondary,
+                foregroundColor: AppColors.textSecondary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('YA, RESET'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Original Reset logic
   void _handleReset() {
     setState(() {
       selectedComplaints.clear();
     });
+    // Optional: Show a quick feedback snackbar after reset
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Pilihan keluhan telah direset.'),
+        duration: Duration(seconds: 1),
+      ),
+    );
   }
 
-  Future<void> _handleSubmit() async {
+  // New: Confirmation Dialog for Submit
+  void _handleSubmitConfirmation() {
     if (selectedComplaints.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -44,6 +108,63 @@ class _CreateComplaintMonitoringState extends State<CreateComplaintMonitoring> {
       return;
     }
 
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: const Text(
+            'Konfirmasi Keluhan',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Anda telah memilih keluhan berikut:',
+              ),
+              const SizedBox(height: 8),
+              ...selectedComplaints.map((complaint) => Text('- $complaint')).toList(),
+              const SizedBox(height: 12),
+              const Text(
+                'Apakah data ini sudah benar?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(), // Close dialog
+              child: const Text(
+                'CEK KEMBALI',
+                style: TextStyle(color: AppColors.textPrimary),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close confirmation dialog
+                _handleSubmit(); // Proceed with submission
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.secondary,
+                foregroundColor: AppColors.textSecondary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('YA, KIRIM'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Original Submission logic, modified to call the new success dialog
+  Future<void> _handleSubmit() async {
     setState(() {
       _isLoading = true;
     });
@@ -54,24 +175,30 @@ class _CreateComplaintMonitoringState extends State<CreateComplaintMonitoring> {
         complaints: selectedComplaints.toList(),
       );
 
-      // Call API to create complaint - now returns the created complaint with message
-      final createdComplaint = await _complaintService.createComplaint(complaint);
+      // Call API to create complaint
+      await _complaintService.createComplaint(complaint);
 
-      // Show success message
+      // --- New: Show an intermediate success popup first ---
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Keluhan berhasil disimpan'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      await _showIntermediateSuccessDialog();
+      // ------------------------------------------------------
 
-      // Show dialog with message from API response
-      await _showComplaintDialog(createdComplaint);
+      // Determine message based on number of complaints selected
+      String message;
+      if (selectedComplaints.length == 1) {
+        // Jika tercentang satu keluhan
+        message = 'Konsultasikan keluhan bapak/ibu kepada dokter/perawat yang bertugas atau hubungi petugas pada link TANYA PETUGAS';
+      } else {
+        // Jika tercentang lebih dari satu keluhan
+        message = 'Segera konsultasikan keluhan bapak/ibu ke poliklinik atau faskes terdekat';
+      }
+
+      // Show final guidance dialog
+      await _showComplaintDialog(message);
 
     } catch (e) {
       if (!mounted) return;
+      // Show failure message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal menyimpan keluhan: ${e.toString()}'),
@@ -87,12 +214,75 @@ class _CreateComplaintMonitoringState extends State<CreateComplaintMonitoring> {
     }
   }
 
-  Future<void> _showComplaintDialog(Complaint complaint) async {
-    // Use message from API response, with fallback if null or empty
-    final String message = complaint.message != null && complaint.message!.isNotEmpty
-        ? complaint.message!
-        : 'Konsultasikan keluhan bapak/ibu kepada dokter/perawat yang bertugas';
+  // New: Intermediate Success Dialog
+  Future<void> _showIntermediateSuccessDialog() async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: const Text(
+            'Berhasil!',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: Colors.green,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.check_circle,
+                color: Colors.green,
+                size: 60,
+              ),
+              SizedBox(height: 10),
+              Text(
+                'Keluhan berhasil disimpan',
+                style: TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close dialog, proceed to next step
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.secondary,
+                  foregroundColor: AppColors.textSecondary,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'LANJUT',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
+  // Original Final Guidance Dialog
+  Future<void> _showComplaintDialog(String message) async {
     await showDialog(
       context: context,
       barrierDismissible: false,
@@ -107,35 +297,42 @@ class _CreateComplaintMonitoringState extends State<CreateComplaintMonitoring> {
               fontWeight: FontWeight.bold,
               fontSize: 18,
             ),
+            textAlign: TextAlign.center,
           ),
           content: Text(
             message,
-            style: const TextStyle(fontSize: 16),
+            style: const TextStyle(fontSize: 15),
+            textAlign: TextAlign.center,
           ),
           actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                Navigator.of(context).pushReplacementNamed(
-                  AppRoutes.complaintMonitoring,
-                );
-              },
-              style: TextButton.styleFrom(
-                backgroundColor: AppColors.tertiary,
-                foregroundColor: AppColors.textSecondary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close dialog
+                  // This is the final step, redirecting
+                  if (mounted) {
+                    Navigator.of(context).pushReplacementNamed(
+                      AppRoutes.complaintMonitoring,
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.secondary,
+                  foregroundColor: AppColors.textSecondary,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'OKE',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+                child: const Text(
+                  'OKE',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ),
@@ -144,6 +341,8 @@ class _CreateComplaintMonitoringState extends State<CreateComplaintMonitoring> {
       },
     );
   }
+
+  /// --- Widget Build Method ---
 
   @override
   Widget build(BuildContext context) {
@@ -268,7 +467,8 @@ class _CreateComplaintMonitoringState extends State<CreateComplaintMonitoring> {
                     Expanded(
                       flex: 1,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleReset,
+                        // Use the confirmation handler
+                        onPressed: _isLoading ? null : _handleResetConfirmation,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF5A5A5A),
                           foregroundColor: AppColors.textSecondary,
@@ -292,9 +492,10 @@ class _CreateComplaintMonitoringState extends State<CreateComplaintMonitoring> {
                     Expanded(
                       flex: 2,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleSubmit,
+                        // Use the confirmation handler
+                        onPressed: _isLoading ? null : _handleSubmitConfirmation,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.tertiary,
+                          backgroundColor: AppColors.secondary,
                           foregroundColor: AppColors.textSecondary,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
@@ -322,7 +523,7 @@ class _CreateComplaintMonitoringState extends State<CreateComplaintMonitoring> {
               color: Colors.black.withOpacity(0.3),
               child: const Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.tertiary),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.secondary),
                 ),
               ),
             ),

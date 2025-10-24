@@ -144,7 +144,7 @@ class _ComplaintMonitoringPageState extends State<ComplaintMonitoringPage> {
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               style: TextButton.styleFrom(
-                backgroundColor: AppColors.tertiary,
+                backgroundColor: AppColors.secondary,
                 foregroundColor: AppColors.textSecondary,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -207,7 +207,7 @@ class _ComplaintMonitoringPageState extends State<ComplaintMonitoringPage> {
               child: _isLoading
                   ? const Center(
                       child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.tertiary),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.secondary),
                       ),
                     )
                   : Container(
@@ -330,7 +330,7 @@ class _ComplaintMonitoringPageState extends State<ComplaintMonitoringPage> {
           // Reload data setelah kembali dari create page
           _loadComplaints();
         },
-        backgroundColor: AppColors.tertiary,
+        backgroundColor: AppColors.secondary,
         child: const Icon(
           Icons.add,
           color: AppColors.textSecondary,
@@ -404,7 +404,7 @@ class _ComplaintMonitoringPageState extends State<ComplaintMonitoringPage> {
         child: IconButton(
           icon: const Icon(
             Icons.remove_red_eye,
-            color: AppColors.tertiary,
+            color: AppColors.secondary,
             size: 20,
           ),
           onPressed: () => _showComplaintDetail(complaint),
