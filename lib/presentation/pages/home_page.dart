@@ -82,7 +82,7 @@ class _HomePageState extends State<HomePage> {
     try {
       setState(() {
         isLoadingEducation = true;
-        educationError = null;
+        educationError = null; // 💡 Pastikan error dibersihkan sebelum memuat
       });
       
       final educations = await EducationService().fetchAllEducations(
@@ -100,6 +100,7 @@ class _HomePageState extends State<HomePage> {
       if (mounted) {
         setState(() {
           educationError = e.toString().replaceAll('Exception: ', '');
+          educationItems = []; 
           isLoadingEducation = false;
         });
       }
@@ -225,7 +226,8 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    if (educationError != null) {
+    // PERBAIKAN: Pisahkan penanganan error dan empty state
+    if (educationError != null && educationError!.isNotEmpty) {
       return SizedBox(
         height: requiredHeight,
         child: Center(
@@ -235,13 +237,16 @@ class _HomePageState extends State<HomePage> {
               const Icon(Icons.error_outline, size: 48, color: Colors.red),
               const SizedBox(height: 8),
               Text(
-                educationError!,
+                educationError!, 
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.red),
               ),
               const SizedBox(height: 8),
               ElevatedButton(
                 onPressed: _loadEducations,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF9800),
+                ),
                 child: const Text('Coba Lagi'),
               ),
             ],
@@ -250,11 +255,29 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
+    // PERBAIKAN: Empty state dengan icon yang lebih friendly
     if (educationItems.isEmpty) {
-      return const SizedBox(
+      return SizedBox(
         height: requiredHeight,
         child: Center(
-          child: Text('Belum ada edukasi tersedia'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.school_outlined,
+                size: 48,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Belum ada edukasi tersedia',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -271,7 +294,6 @@ class _HomePageState extends State<HomePage> {
             margin: const EdgeInsets.only(right: 12),
             child: GridItemCard(
               aspectRatio: _cardAspectRatio, 
-              // Cek jika thumbnail kosong, gunakan placeholder
               imageUrl: item.thumbnail.isNotEmpty ? item.thumbnail : 'assets/default_education.png',
               title: item.name,
               onTap: () => _launchURL(item.url),
@@ -292,7 +314,8 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    if (quizError != null) {
+    // PERBAIKAN: Pisahkan penanganan error dan empty state
+    if (quizError != null && quizError!.isNotEmpty) {
       return SizedBox(
         height: _requiredCardHeight,
         child: Center(
@@ -309,6 +332,9 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 8),
               ElevatedButton(
                 onPressed: _loadQuizzes,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF9800),
+                ),
                 child: const Text('Coba Lagi'),
               ),
             ],
@@ -317,11 +343,29 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
+    // PERBAIKAN: Empty state dengan icon yang lebih friendly
     if (quizItems.isEmpty) {
-      return const SizedBox(
+      return SizedBox(
         height: _requiredCardHeight,
         child: Center(
-          child: Text('Belum ada kuis tersedia'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.quiz_outlined,
+                size: 48,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Belum ada kuis tersedia',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -338,7 +382,7 @@ class _HomePageState extends State<HomePage> {
             margin: const EdgeInsets.only(right: 12),
             child: GridItemCard(
               aspectRatio: _cardAspectRatio,
-              imageUrl: 'assets/quiz.jpg', // Default image untuk quiz
+              imageUrl: 'assets/quiz.jpg',
               title: item.name,
               onTap: () => _launchURL(item.url),
             ),
@@ -377,7 +421,7 @@ class _HomePageState extends State<HomePage> {
                           userName = _formatUserName(snapshot.data!.name);
                         } else {
                           // Fallback jika error atau data null
-                          userName = 'WAHYU HS'; 
+                          userName = 'Pengguna'; 
                           if (snapshot.hasError) {
                               print('Error loading user profile: ${snapshot.error}');
                           }

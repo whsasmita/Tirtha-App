@@ -19,12 +19,15 @@ class EducationDashboardPage extends StatefulWidget {
 class _EducationDashboardPageState extends State<EducationDashboardPage> {
   int _selectedIndex = 1;
   final EducationService _educationService = EducationService();
-  late Future<List<EducationModel>> _educationsFuture;
-
+  
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
+  
   List<EducationModel> _allEducations = [];
   List<EducationModel> _filteredEducations = [];
+  
+  bool _isLoading = false;
+  String? _error;
 
   @override
   void initState() {
@@ -33,46 +36,72 @@ class _EducationDashboardPageState extends State<EducationDashboardPage> {
     _searchController.addListener(_onSearchChanged);
   }
 
-  void _loadEducations() {
-    _educationsFuture = _educationService.fetchAllEducations();
-    _educationsFuture.then((data) {
-      setState(() {
-        _allEducations = data;
-        _filteredEducations = data;
-      });
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadEducations() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
     });
+
+    try {
+      final educations = await _educationService.fetchAllEducations();
+      
+      if (mounted) {
+        setState(() {
+          _allEducations = educations;
+          _filteredEducations = educations;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString().replaceAll('Exception: ', '');
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _onSearchChanged() {
     setState(() {
       _searchQuery = _searchController.text.toLowerCase();
-      _filteredEducations = _allEducations
-          .where((edu) => edu.name.toLowerCase().contains(_searchQuery))
-          .toList();
+      if (_searchQuery.isEmpty) {
+        _filteredEducations = _allEducations;
+      } else {
+        _filteredEducations = _allEducations
+            .where((edu) => edu.name.toLowerCase().contains(_searchQuery))
+            .toList();
+      }
     });
   }
 
-  void _refreshEducations() {
-    _loadEducations();
-  }
-
   void _navigateToEditEducation(int educationId) async {
-    final result = await Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => UpsertEducationPage(educationId: educationId)));
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => UpsertEducationPage(educationId: educationId),
+      ),
+    );
 
     if (result == true) {
-      _refreshEducations();
+      _loadEducations();
     }
   }
 
   void _navigateToCreateEducation() async {
     final result = await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const UpsertEducationPage(educationId: null)),
+      MaterialPageRoute(
+        builder: (_) => const UpsertEducationPage(educationId: null),
+      ),
     );
 
     if (result == true) {
-      _refreshEducations();
+      _loadEducations();
     }
   }
 
@@ -147,7 +176,7 @@ class _EducationDashboardPageState extends State<EducationDashboardPage> {
     if (confirmed == true) {
       try {
         await _educationService.deleteEducation(education.id);
-        _refreshEducations();
+        _loadEducations();
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -182,7 +211,10 @@ class _EducationDashboardPageState extends State<EducationDashboardPage> {
           children: [
             SizedBox(
               width: 40,
-              child: Text(no.toString(), textAlign: TextAlign.center),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(no.toString(), textAlign: TextAlign.center),
+              ),
             ),
             Expanded(
               child: Padding(
@@ -221,10 +253,84 @@ class _EducationDashboardPageState extends State<EducationDashboardPage> {
     );
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  Widget _buildBody() {
+    // 1. Loading State
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.all(40.0),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // 2. Error State
+    if (_error != null) {
+      return Padding(
+        padding: const EdgeInsets.all(40.0),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16, color: Colors.red),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadEducations,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.secondary,
+                ),
+                child: const Text('Coba Lagi'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 3. Empty State
+    if (_filteredEducations.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(40.0),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                _searchQuery.isNotEmpty ? Icons.search_off : Icons.school_outlined,
+                size: 64,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _searchQuery.isNotEmpty 
+                    ? 'Tidak ditemukan hasil pencarian.'
+                    : 'Belum ada edukasi tersedia',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 4. Data List
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _filteredEducations.length,
+      itemBuilder: (context, index) {
+        final education = _filteredEducations[index];
+        return _buildEducationsTableItem(context, index + 1, education);
+      },
+    );
   }
 
   @override
@@ -232,103 +338,119 @@ class _EducationDashboardPageState extends State<EducationDashboardPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const TopBar(),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: HomeHeader(
-                title: 'EDUKASI KESEHATAN',
-                backgroundColor: AppColors.secondary,
-                illustrationPath: 'assets/doctor.png',
+      body: RefreshIndicator(
+        onRefresh: _loadEducations,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: HomeHeader(
+                  title: 'EDUKASI KESEHATAN',
+                  backgroundColor: AppColors.secondary,
+                  illustrationPath: 'assets/doctor.png',
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 50,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: const InputDecoration(
-                          hintText: 'Cari edukasi disini...',
-                          hintStyle: TextStyle(color: Colors.grey),
-                          prefixIcon: Icon(Icons.search, color: Colors.grey),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                            vertical: 14,
-                            horizontal: 10,
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 50,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: const InputDecoration(
+                            hintText: 'Cari edukasi di sini...',
+                            hintStyle: TextStyle(color: Colors.grey),
+                            prefixIcon: Icon(Icons.search, color: Colors.grey),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 10,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: IntrinsicHeight(
-                child: Row(
-                  children: const [
-                    SizedBox(width: 40, child: Text("No", textAlign: TextAlign.center)),
-                    Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text("Nama"),
-                      ),
-                    ),
-                    SizedBox(width: 100, child: Text("Link")),
-                    SizedBox(width: 60, child: Text("Aksi")),
                   ],
                 ),
               ),
-            ),
-            FutureBuilder<List<EducationModel>>(
-              future: _educationsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting && _allEducations.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.all(20.0),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                } else if (snapshot.hasError) {
-                  return Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Center(
-                      child: Text('Gagal memuat data: ${snapshot.error}'),
+              const SizedBox(height: 20),
+              
+              // Table Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    color: Colors.grey.shade100,
+                  ),
+                  child: IntrinsicHeight(
+                    child: Row(
+                      children: const [
+                        SizedBox(
+                          width: 40,
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text(
+                              "No",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text(
+                              "Nama",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 100,
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text(
+                              "Link",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 96,
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text(
+                              "Aksi",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                } else if (_filteredEducations.isNotEmpty) {
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _filteredEducations.length,
-                    itemBuilder: (context, index) {
-                      final education = _filteredEducations[index];
-                      return _buildEducationsTableItem(context, index + 1, education);
-                    },
-                  );
-                } else {
-                  return const Padding(
-                    padding: EdgeInsets.all(20.0),
-                    child: Center(child: Text('Tidak ditemukan hasil pencarian.')),
-                  );
-                }
-              },
-            ),
-            const SizedBox(height: 80),
-          ],
+                  ),
+                ),
+              ),
+              
+              // Table Body
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: _buildBody(),
+              ),
+              
+              const SizedBox(height: 80),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: BottomNavV2(

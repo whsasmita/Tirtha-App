@@ -7,6 +7,8 @@ class AppTextField extends StatelessWidget {
   final Widget? prefixIcon;
   final Widget? suffixIcon;
   final TextEditingController controller;
+  // 💡 Tambahkan parameter keyboardType
+  final TextInputType keyboardType;
 
   const AppTextField({
     Key? key,
@@ -15,6 +17,8 @@ class AppTextField extends StatelessWidget {
     this.prefixIcon,
     this.suffixIcon,
     required this.controller,
+    // 💡 Tetapkan nilai default ke TextInputType.text
+    this.keyboardType = TextInputType.text, 
   }) : super(key: key);
 
   @override
@@ -22,6 +26,8 @@ class AppTextField extends StatelessWidget {
     return TextField(
       obscureText: obscureText,
       controller: controller,
+      // 💡 Teruskan keyboardType ke widget TextField internal
+      keyboardType: keyboardType, 
       decoration: InputDecoration(
         hintText: hintText,
         prefixIcon: prefixIcon,

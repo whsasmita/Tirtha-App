@@ -4,8 +4,8 @@ class EducationModel {
   final String url;
   final String thumbnail;
   final int createdBy;
-  final String? createdAt; // 💡 Diubah menjadi nullable
-  final String? updatedAt; // 💡 Diubah menjadi nullable
+  final String? createdAt; // Diubah menjadi nullable
+  final String? updatedAt; // Diubah menjadi nullable
 
   EducationModel({
     required this.id,
@@ -13,20 +13,20 @@ class EducationModel {
     required this.url,
     required this.thumbnail,
     required this.createdBy,
-    this.createdAt, // 💡 Hapus required
-    this.updatedAt, // 💡 Hapus required
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory EducationModel.fromJson(Map<String, dynamic> json) {
     return EducationModel(
-      // Kunci yang dikoreksi ke snake_case dan penanganan nullable
+      // Menggunakan snake_case dan penanganan nullable
       id: json['id'] as int, 
       name: json['name'] as String,
       url: json['url'] as String,
       thumbnail: json['thumbnail'] as String,
-      createdBy: json['created_by'] as int, 
-      createdAt: json['created_at'] as String?, // Gunakan String?
-      updatedAt: json['updated_at'] as String?, // Gunakan String?
+      createdBy: json['created_by'] as int, // Menggunakan 'created_by'
+      createdAt: json['created_at'] as String?, 
+      updatedAt: json['updated_at'] as String?, 
     );
   }
 }
@@ -49,11 +49,16 @@ class EducationResponse {
   factory EducationResponse.fromJson(Map<String, dynamic> json) {
     List<EducationModel> educations = [];
     
-    if (json['data'] is List) {
-      educations = (json['data'] as List)
+    // 💡 Perbaikan: Ambil dataList dengan aman. Jika json['data'] null, dataList akan menjadi null.
+    final dataList = json['data'];
+
+    // Hanya coba map jika dataList bukan null DAN merupakan List
+    if (dataList is List) {
+      educations = dataList
           .map((item) => EducationModel.fromJson(item))
           .toList();
     }
+    // Jika dataList adalah null (sesuai log Anda) atau bukan List, `educations` tetap list kosong `[]`.
 
     return EducationResponse(
       data: educations,

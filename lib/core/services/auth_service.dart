@@ -8,6 +8,7 @@ class AuthService {
     String email,
     String password,
     String timezone,
+    String phoneNumber, // 💡 Parameter phoneNumber
   ) async {
     try {
       final response = await ApiClient.dio.post(
@@ -17,6 +18,7 @@ class AuthService {
           'email': email,
           'password': password,
           'timezone': timezone,
+          'phone_number': phoneNumber, // 💡 Data phone_number dikirim
         },
         options: Options(
           headers: {Headers.contentTypeHeader: Headers.jsonContentType},
@@ -25,7 +27,7 @@ class AuthService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         print("Registrasi berhasil: ${response.data['message']}");
-        print("timezone: $timezone");
+        print("phone_number: $phoneNumber");
         return;
       } else {
         throw Exception(response.data['message'] ?? 'Registrasi gagal.');

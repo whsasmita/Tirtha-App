@@ -16,6 +16,8 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  // 💡 Tambahkan controller untuk nomor telepon
+  final TextEditingController _phoneNumberController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _konfirmasiPasswordController =
       TextEditingController();
@@ -28,6 +30,7 @@ class _RegisterPageState extends State<RegisterPage> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _phoneNumberController.dispose(); // 💡 Jangan lupa dispose controller baru
     _passwordController.dispose();
     _konfirmasiPasswordController.dispose();
     super.dispose();
@@ -44,31 +47,37 @@ class _RegisterPageState extends State<RegisterPage> {
       title = 'Password Tidak Sama';
       icon = Icons.lock_outline;
     } else if (message.toLowerCase().contains('tidak lengkap') ||
-               message.toLowerCase().contains('tidak boleh kosong') ||
-               message.toLowerCase().contains('wajib diisi')) {
+        message.toLowerCase().contains('tidak boleh kosong') ||
+        message.toLowerCase().contains('wajib diisi')) {
       title = 'Input Tidak Lengkap';
       icon = Icons.warning_amber_rounded;
       iconColor = Colors.orange;
     } else if (message.toLowerCase().contains('email') &&
-               (message.toLowerCase().contains('sudah') ||
-                message.toLowerCase().contains('terdaftar'))) {
+        (message.toLowerCase().contains('sudah') ||
+            message.toLowerCase().contains('terdaftar'))) {
       title = 'Email Sudah Terdaftar';
       icon = Icons.email_outlined;
     } else if (message.toLowerCase().contains('password') &&
-               message.toLowerCase().contains('minimal')) {
+        message.toLowerCase().contains('minimal')) {
       title = 'Password Terlalu Pendek';
       icon = Icons.lock_outline;
     } else if (message.toLowerCase().contains('format') &&
-               message.toLowerCase().contains('email')) {
+        message.toLowerCase().contains('email')) {
       title = 'Format Email Salah';
       icon = Icons.email_outlined;
-    } else if (message.toLowerCase().contains('koneksi') || 
-               message.toLowerCase().contains('jaringan')) {
+    } else if (message.toLowerCase().contains('koneksi') ||
+        message.toLowerCase().contains('jaringan')) {
       title = 'Masalah Koneksi';
       icon = Icons.wifi_off;
     } else if (message.toLowerCase().contains('server')) {
       title = 'Server Bermasalah';
       icon = Icons.cloud_off;
+    } else if (message.toLowerCase().contains('nomor telepon') || 
+               message.toLowerCase().contains('phone number') ||
+               message.toLowerCase().contains('telepon wajib diisi')) {
+      title = 'Nomor Telepon Wajib Diisi';
+      icon = Icons.phone_android_outlined;
+      iconColor = Colors.orange;
     }
 
     showDialog(
@@ -197,9 +206,10 @@ class _RegisterPageState extends State<RegisterPage> {
   String _getDeviceTimezone() {
     final now = DateTime.now();
     final offset = now.timeZoneOffset;
-    
+
     final offsetInHours = offset.inHours;
-    
+
+    // Asumsi default timezone di Indonesia (WIB, WITA, WIT)
     switch (offsetInHours) {
       case 7:
         return 'Asia/Jakarta';
@@ -218,6 +228,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _handleRegister() async {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
+    final phoneNumber = _phoneNumberController.text.trim(); // 💡 Ambil nilai phone number
     final password = _passwordController.text.trim();
     final konfirmasiPassword = _konfirmasiPasswordController.text.trim();
 
@@ -229,6 +240,12 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (email.isEmpty) {
       _showErrorDialog('Email wajib diisi.');
+      return;
+    }
+
+    // 💡 Validasi Nomor Telepon
+    if (phoneNumber.isEmpty) {
+      _showErrorDialog('Nomor telepon wajib diisi.');
       return;
     }
 
@@ -268,8 +285,16 @@ class _RegisterPageState extends State<RegisterPage> {
       final String timezone = _getDeviceTimezone();
       
       print('Timezone detected: $timezone');
+      print('Phone Number: $phoneNumber'); // Log phone number
 
-      await _authService.register(name, email, password, timezone);
+      // 💡 Panggil register service dengan parameter phoneNumber
+      await _authService.register(
+        name,
+        email,
+        password,
+        timezone,
+        phoneNumber, // Kirimkan phone number
+      );
 
       if (mounted) {
         _showSuccessDialog();
@@ -338,6 +363,21 @@ class _RegisterPageState extends State<RegisterPage> {
                 prefixIcon: const Icon(Icons.email_outlined, color: AppColors.primary),
               ),
               const SizedBox(height: 24),
+
+              // 💡 Input Nomor Telepon
+              const Text(
+                'Nomor Telepon',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              AppTextField(
+                hintText: 'Masukkan nomor telepon anda',
+                controller: _phoneNumberController,
+                keyboardType: TextInputType.phone,
+                prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primary),
+              ),
+              const SizedBox(height: 24),
+              // --------------------------
 
               const Text(
                 'Password',
