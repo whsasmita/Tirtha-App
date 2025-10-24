@@ -32,6 +32,9 @@ class _EducationListPageState extends State<EducationListPage> {
   bool _hasMore = true;
   String? _error;
   String _searchQuery = "";
+  
+  // Konstanta untuk konsistensi ukuran card
+  static const double _cardAspectRatio = 1.4; 
 
   @override
   void initState() {
@@ -61,6 +64,7 @@ class _EducationListPageState extends State<EducationListPage> {
   void _onSearchChanged() {
     setState(() {
       _searchQuery = _searchController.text.toLowerCase();
+      // Filtrasi dilakukan pada _allEducations yang sudah dimuat
       if (_searchQuery.isEmpty) {
         _filteredEducations = _allEducations;
       } else {
@@ -89,7 +93,7 @@ class _EducationListPageState extends State<EducationListPage> {
         setState(() {
           _allEducations = response.data;
           _filteredEducations = response.data;
-          _hasMore = response.hasMore;
+          _hasMore = response.totalPages != null && response.page != null && response.page! < response.totalPages!;
           _isLoading = false;
         });
       }
@@ -104,7 +108,7 @@ class _EducationListPageState extends State<EducationListPage> {
   }
 
   Future<void> _loadMoreEducations() async {
-    if (_isLoadingMore) return;
+    if (_isLoadingMore || !_hasMore) return;
 
     setState(() {
       _isLoadingMore = true;
@@ -120,12 +124,13 @@ class _EducationListPageState extends State<EducationListPage> {
         setState(() {
           _currentPage++;
           _allEducations.addAll(response.data);
+          // Apply filter to new combined list
           _filteredEducations = _searchQuery.isEmpty 
               ? _allEducations 
               : _allEducations
                   .where((edu) => edu.name.toLowerCase().contains(_searchQuery))
                   .toList();
-          _hasMore = response.hasMore;
+          _hasMore = response.totalPages != null && response.page != null && response.page! < response.totalPages!;
           _isLoadingMore = false;
         });
       }
@@ -318,7 +323,7 @@ class _EducationListPageState extends State<EducationListPage> {
         crossAxisCount: 2,
         crossAxisSpacing: 16.0,
         mainAxisSpacing: 16.0,
-        childAspectRatio: 1.4,
+        childAspectRatio: _cardAspectRatio, // Menggunakan rasio 1.4
       ),
       itemCount: _filteredEducations.length + (_isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
@@ -334,7 +339,8 @@ class _EducationListPageState extends State<EducationListPage> {
         final item = _filteredEducations[index];
         return GridItemCard(
           title: item.name,
-          imageUrl: item.thumbnail.isNotEmpty ? item.thumbnail : "assets/doctor.png",
+          imageUrl: item.thumbnail.isNotEmpty ? item.thumbnail : "assets/default_placeholder.png",
+          aspectRatio: _cardAspectRatio,
           onTap: () => _launchURL(item.url),
         );
       },

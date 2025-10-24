@@ -53,6 +53,7 @@ dependencies:
   intl: ^0.20.2
   timezone: ^0.10.0
   permission_handler: ^12.0.1
+  image_picker: ^1.2.0
 
 dev_dependencies:
   flutter_test:
@@ -99,6 +100,7 @@ flutter:
     - assets/obat.png
     - assets/virus.png
     - assets/gelas_blimbing.png
+    - assets/default-avatar.png
     - assets/about_me.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see

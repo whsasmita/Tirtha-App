@@ -1,23 +1,32 @@
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:tirtha_app/core/services/app_client.dart';
 import 'package:tirtha_app/data/models/education_model.dart';
 
 class EducationService {
-  Future<void> saveEducation(String name, String url, String thumbnail) async {
+  Future<void> saveEducation(String name, String url, XFile thumbnail) async {
     try {
+      // 1. Buat MultipartFile dari XFile
+      final thumbnailFile = await MultipartFile.fromFile(
+        thumbnail.path,
+        filename: thumbnail.name,
+      );
+
+      // 2. Buat FormData
+      final FormData formData = FormData.fromMap({
+        'name': name,
+        'url': url,
+        'thumbnail': thumbnailFile, // Kirim file sebagai 'thumbnail'
+      });
+
       final response = await ApiClient.dio.post(
         '/educations/',
-        data: {'name': name, 'url': url, 'thumbnail':thumbnail},
-        options: Options(
-          headers: {Headers.contentTypeHeader: Headers.jsonContentType},
-        ),
+        data: formData, // Kirim FormData
       );
 
       if (response.statusCode == 201) {
         print("Edukasi berhasil dibuat.");
-        
         return; 
-
       } else {
         throw Exception(response.data['message'] ?? 'Pembuatan Edukasi gagal dengan status tak terduga.');
       }
@@ -118,12 +127,46 @@ class EducationService {
     }
   }
 
+  Future<void> updateEducation(int id, String name, String url, XFile? thumbnail) async {
+    try {
+      final Map<String, dynamic> dataMap = {
+        'name': name,
+        'url': url,
+      };
+
+      if (thumbnail != null) {
+        // Jika ada thumbnail baru, tambahkan ke data sebagai MultipartFile
+        final thumbnailFile = await MultipartFile.fromFile(
+          thumbnail.path,
+          filename: thumbnail.name,
+        );
+        dataMap['thumbnail'] = thumbnailFile;
+      }
+      
+      final FormData formData = FormData.fromMap(dataMap);
+
+      final response = await ApiClient.dio.put(
+        '/educations/$id',
+        data: formData, // Kirim FormData
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(response.data['message'] ?? 'Gagal memperbarui edukasi.');
+      }
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal memperbarui edukasi karena jaringan.');
+    }
+  }
+
+  // NOTE: Anda harus menyesuaikan method di bawah ini dengan EducationModel Anda yang sebenarnya
+  
   Future<EducationModel> fetchEducationById(int id) async {
     try {
       final response = await ApiClient.dio.get('/educations/$id');
       
       if (response.statusCode == 200 && response.data != null) {
         if (response.data['data'] != null) { 
+          // Asumsi respons JSON tunggal di dalam kunci 'data'
           return EducationModel.fromJson(response.data['data']);
         }
         throw Exception('Data edukasi tidak ditemukan dalam respons.');
@@ -131,24 +174,6 @@ class EducationService {
       throw Exception('Gagal mendapatkan detail edukasi.');
     } on DioException catch (e) {
       throw Exception(e.response?.data['message'] ?? 'Koneksi gagal atau Edukasi tidak ditemukan.');
-    }
-  }
-
-  Future<void> updateEducation(int id, String name, String url, thumbnail) async {
-    try {
-      final response = await ApiClient.dio.put(
-        '/educations/$id',
-        data: {'name': name, 'url': url, "thumbnail":thumbnail},
-        options: Options(
-          headers: {Headers.contentTypeHeader: Headers.jsonContentType},
-        ),
-      );
-
-      if (response.statusCode != 200 && response.statusCode != 201) {
-         throw Exception(response.data['message'] ?? 'Gagal memperbarui edukasi.');
-      }
-    } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? 'Gagal memperbarui edukasi karena jaringan.');
     }
   }
 

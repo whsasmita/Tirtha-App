@@ -1,8 +1,16 @@
+// File: upsert_education_page.dart
+
+import 'dart:io'; // Digunakan untuk Image.file
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:tirtha_app/presentation/themes/color.dart';
 import 'package:tirtha_app/presentation/widgets/app_text_field.dart';
 import 'package:tirtha_app/presentation/widgets/app_bar_back.dart';
 import 'package:tirtha_app/core/services/education_service.dart';
+
+// Asumsi:
+// - EducationService, AppTextField, AppBarBack sudah didefinisikan di tempat lain.
+// - EducationModel memiliki properti 'thumbnail' (URL string) untuk ditampilkan saat edit.
 
 class UpsertEducationPage extends StatefulWidget {
   final int? educationId; 
@@ -16,8 +24,10 @@ class UpsertEducationPage extends StatefulWidget {
 class _UpsertEducationPageState extends State<UpsertEducationPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _urlController = TextEditingController();
-  final TextEditingController _thumbnailController = TextEditingController();
   final EducationService _educationService = EducationService();
+
+  XFile? _selectedImage; 
+  String? _existingThumbnailUrl; // Untuk menampilkan gambar yang sudah ada saat mode edit
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -37,7 +47,6 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
   void dispose() {
     _nameController.dispose();
     _urlController.dispose();
-    _thumbnailController.dispose();
     super.dispose();
   }
 
@@ -46,13 +55,33 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
       final education = await _educationService.fetchEducationById(widget.educationId!);
       _nameController.text = education.name;
       _urlController.text = education.url;
-      _thumbnailController.text = education.thumbnail;
+      // Asumsi EducationModel memiliki field thumbnail (string URL)
+      _existingThumbnailUrl = education.thumbnail; 
     } catch (e) {
       _showError('Gagal memuat data edukasi: ${e.toString().replaceFirst('Exception: ', '')}');
     } finally {
       setState(() {
         _isInitialLoading = false;
       });
+    }
+  }
+
+  // Metode untuk memilih gambar
+  Future<void> _pickImage() async {
+    if (_isLoading) return;
+
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        setState(() {
+          _selectedImage = image;
+          _errorMessage = null; 
+        });
+      }
+    } catch (e) {
+      // Menangani izin atau error lain saat memilih gambar
+      _showError('Gagal memilih gambar. Pastikan izin galeri diizinkan: $e');
     }
   }
 
@@ -101,6 +130,13 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
     }
 
     final isUpdating = widget.educationId != null;
+    
+    // Validasi Gambar hanya untuk mode Create jika belum ada thumbnail yang tersimpan
+    if (!isUpdating && _selectedImage == null) {
+      _showError('Thumbnail gambar wajib diisi saat membuat edukasi baru.');
+      return;
+    }
+
     final confirmMessage = isUpdating 
         ? 'Apakah Anda yakin ingin menyimpan perubahan?'
         : 'Apakah Anda yakin ingin membuat edukasi ini?';
@@ -121,16 +157,17 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
     try {
       final name = _nameController.text.trim();
       final url = _urlController.text.trim();
-      final thumbnail = _thumbnailController.text.trim();
       
       final isUpdating = widget.educationId != null;
       String successMessage;
       
       if (isUpdating) {
-        await _educationService.updateEducation(widget.educationId!, name, url, thumbnail);
+        // Mode Edit: Kirim file jika ada yang dipilih, jika tidak, kirim null
+        await _educationService.updateEducation(widget.educationId!, name, url, _selectedImage); 
         successMessage = 'Education berhasil diperbarui!';
       } else {
-        await _educationService.saveEducation(name, url, thumbnail); 
+        // Mode Create: Wajib ada file (sudah divalidasi di _handleUpsertEducation)
+        await _educationService.saveEducation(name, url, _selectedImage!); 
         successMessage = 'Education berhasil dibuat!';
       }
       
@@ -167,8 +204,9 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
   void _executeReset() {
     _nameController.clear();
     _urlController.clear();
-    _thumbnailController.clear();
     setState(() {
+      _selectedImage = null; 
+      _existingThumbnailUrl = null;
       _errorMessage = null;
       _isLoading = false;
     });
@@ -198,6 +236,7 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Judul
             const Text(
               'Judul',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -208,6 +247,8 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
               controller: _nameController,
             ),
             const SizedBox(height: 24),
+
+            // Link
             const Text(
               'Link',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -218,20 +259,11 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
               controller: _urlController,
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Thumbnail',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            AppTextField(
-              hintText: 'Masukkan link thumbnail',
-              controller: _thumbnailController,
-            ),
-            const SizedBox(height: 24),
             
+            // Fungsionalitas Upload Gambar/Thumbnail (AKTIF)
             const Text(
-              'Unggah Cover (Fungsionalitas dinonaktifkan)',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey),
+              'Unggah Cover/Thumbnail',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Container(
@@ -239,16 +271,24 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(
+                  // Validasi tampilan error jika file wajib tapi belum dipilih
+                  color: !isEditing && _selectedImage == null && _errorMessage != null 
+                        ? Colors.red
+                        : Colors.grey.shade300,
+                ),
               ),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Text(
-                        'Unggah cover (Tidak aktif)',
-                        style: TextStyle(color: Colors.grey),
+                        _selectedImage?.name ?? 'Pilih Gambar...',
+                        style: TextStyle(
+                          color: _selectedImage == null ? Colors.grey : AppColors.textPrimary,
+                          overflow: TextOverflow.ellipsis
+                        ),
                       ),
                     ),
                   ),
@@ -256,13 +296,13 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
                     width: 100,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade400,
+                      color: _isLoading ? Colors.grey.shade400 : AppColors.secondary,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: TextButton(
-                      onPressed: null,
+                      onPressed: _isLoading ? null : _pickImage, // AKTIF
                       child: const Text(
-                        'Unggah',
+                        'Pilih File',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -274,6 +314,36 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
               ),
             ),
             
+            // Pratinjau Gambar
+            if (_selectedImage != null) 
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: Image.file(
+                  File(_selectedImage!.path),
+                  height: 150,
+                  fit: BoxFit.contain,
+                ),
+              )
+            else if (_existingThumbnailUrl != null && _existingThumbnailUrl!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Thumbnail Tersimpan:', style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    Image.network(
+                      _existingThumbnailUrl!,
+                      height: 150,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Center(
+                        child: Text('Gagal memuat thumbnail yang tersimpan.'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
             if (_errorMessage != null)
               Padding(
                 padding: const EdgeInsets.only(top: 24.0),
@@ -284,11 +354,11 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
                 ),
               ),
             
-            // Extra space untuk bottom navbar
             const SizedBox(height: 80),
           ],
         ),
       ),
+      
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(

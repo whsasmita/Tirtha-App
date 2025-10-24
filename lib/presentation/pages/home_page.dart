@@ -6,11 +6,11 @@ import 'package:tirtha_app/presentation/widgets/grid_item_card.dart';
 import 'package:tirtha_app/routes/app_routes.dart';
 import '../widgets/menu_header.dart';
 import '../widgets/section_home_card.dart';
-// Import service dan model Anda
 import 'package:tirtha_app/data/models/education_model.dart';
 import 'package:tirtha_app/data/models/quiz_model.dart';
 import 'package:tirtha_app/core/services/education_service.dart';
 import 'package:tirtha_app/core/services/quiz_service.dart';
+import 'package:tirtha_app/presentation/themes/color.dart'; // Asumsi AppColors diimport dari sini
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -22,6 +22,13 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   
+  // Konstanta untuk konsistensi ukuran card
+  static const double _cardWidth = 160;
+  static const double _cardAspectRatio = 1.4; // width / height = 1.4
+  
+  // Tinggi yang dibutuhkan: (Width / AspectRatio) + Padding Vertikal Card ≈ 114 + 66 = 180
+  static const double _requiredCardHeight = 180.0; 
+
   // State untuk education
   List<EducationModel> educationItems = [];
   bool isLoadingEducation = true;
@@ -54,7 +61,7 @@ class _HomePageState extends State<HomePage> {
       
       final educations = await EducationService().fetchAllEducations(
         page: 1,
-        limit: 10, // Ambil 10 untuk homepage
+        limit: 10, 
       );
       
       if (mounted) {
@@ -82,7 +89,7 @@ class _HomePageState extends State<HomePage> {
       
       final quizzes = await QuizService().fetchAllQuizzes(
         page: 1,
-        limit: 10, // Ambil 10 untuk homepage
+        limit: 10, 
       );
       
       if (mounted) {
@@ -115,14 +122,31 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _launchURL(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+  Future<void> _launchURL(String url) async {
+    if (url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('URL tidak tersedia')),
+      );
+      return;
+    }
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://$url';
+    }
+
+    final Uri uri = Uri.parse(url);
+
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal membuka link: $url')),
+        );
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Tidak dapat membuka link: $url')),
+          SnackBar(content: Text('Terjadi kesalahan: $e')),
         );
       }
     }
@@ -164,9 +188,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildEducationSection() {
+    // Gunakan tinggi yang dihitung agar konsisten dengan EducationListPage
+    const double requiredHeight = _requiredCardHeight; 
+
     if (isLoadingEducation) {
       return const SizedBox(
-        height: 220,
+        height: requiredHeight,
         child: Center(
           child: CircularProgressIndicator(),
         ),
@@ -175,7 +202,7 @@ class _HomePageState extends State<HomePage> {
 
     if (educationError != null) {
       return SizedBox(
-        height: 220,
+        height: requiredHeight,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -200,7 +227,7 @@ class _HomePageState extends State<HomePage> {
 
     if (educationItems.isEmpty) {
       return const SizedBox(
-        height: 220,
+        height: requiredHeight,
         child: Center(
           child: Text('Belum ada edukasi tersedia'),
         ),
@@ -208,17 +235,19 @@ class _HomePageState extends State<HomePage> {
     }
 
     return SizedBox(
-      height: 220,
+      height: requiredHeight,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: educationItems.length,
         itemBuilder: (context, index) {
           final item = educationItems[index];
           return Container(
-            width: 160,
+            width: _cardWidth, // Lebar yang konsisten
             margin: const EdgeInsets.only(right: 12),
             child: GridItemCard(
-              imageUrl: item.thumbnail,
+              // Pastikan GridItemCard Anda mendukung aspek rasio untuk konsistensi
+              aspectRatio: _cardAspectRatio, 
+              imageUrl: item.thumbnail, // Menampilkan thumbnail dari API
               title: item.name,
               onTap: () => _launchURL(item.url),
             ),
@@ -231,7 +260,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildQuizSection() {
     if (isLoadingQuiz) {
       return const SizedBox(
-        height: 220,
+        height: _requiredCardHeight,
         child: Center(
           child: CircularProgressIndicator(),
         ),
@@ -240,7 +269,7 @@ class _HomePageState extends State<HomePage> {
 
     if (quizError != null) {
       return SizedBox(
-        height: 220,
+        height: _requiredCardHeight,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -265,7 +294,7 @@ class _HomePageState extends State<HomePage> {
 
     if (quizItems.isEmpty) {
       return const SizedBox(
-        height: 220,
+        height: _requiredCardHeight,
         child: Center(
           child: Text('Belum ada kuis tersedia'),
         ),
@@ -273,16 +302,17 @@ class _HomePageState extends State<HomePage> {
     }
 
     return SizedBox(
-      height: 220,
+      height: _requiredCardHeight,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: quizItems.length,
         itemBuilder: (context, index) {
           final item = quizItems[index];
           return Container(
-            width: 160,
+            width: _cardWidth,
             margin: const EdgeInsets.only(right: 12),
             child: GridItemCard(
+              aspectRatio: _cardAspectRatio,
               imageUrl: 'assets/quiz.jpg', // Default image untuk quiz
               title: item.name,
               onTap: () => _launchURL(item.url),

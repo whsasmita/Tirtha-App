@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:tirtha_app/presentation/themes/color.dart';
-import 'package:tirtha_app/core/services/notification_service.dart';
 import 'package:tirtha_app/core/services/drug_schedule_service.dart';
 import 'package:tirtha_app/core/services/control_schedule_service.dart';
 import 'package:tirtha_app/core/services/hemodialysis_schedule_service.dart';
@@ -9,7 +8,7 @@ import 'package:tirtha_app/data/models/control_schedule_model.dart';
 import 'package:tirtha_app/data/models/hemodialysis_schedule_model.dart';
 
 class ReminderFormPage extends StatefulWidget {
-  final dynamic editData; // Data untuk edit mode
+  final dynamic editData;
   
   const ReminderFormPage({Key? key, this.editData}) : super(key: key);
 
@@ -23,7 +22,6 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
   String? selectedDate;
   String? selectedTime;
 
-  // Drug Schedule states
   String drugName = '';
   String dose = '1 Tablet';
   bool at06 = false;
@@ -35,16 +33,13 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
   final TextEditingController drugNameController = TextEditingController();
   final TextEditingController doseController = TextEditingController(text: '1');
 
-  // Service instances
   final DrugScheduleService _drugScheduleService = DrugScheduleService();
   final ControlScheduleService _controlScheduleService = ControlScheduleService();
   final HemodialysisScheduleService _hemodialysisScheduleService = HemodialysisScheduleService();
 
-  // Edit mode
   bool isEditMode = false;
   int? editId;
 
-  // Helper untuk close dialog dengan aman
   void _safeCloseDialog() {
     if (mounted) {
       try {
@@ -55,49 +50,30 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
     }
   }
 
-  // Helper untuk show dialog dengan aman
   Future<void> _safeShowDialog(Widget dialog) async {
     if (!mounted) return;
     await Future.delayed(const Duration(milliseconds: 100));
     if (!mounted) return;
     
-    showDialog(
-      context: context,
-      builder: (_) => dialog,
-    );
+    showDialog(context: context, builder: (_) => dialog);
   }
 
   final List<Map<String, dynamic>> categories = [
-    {
-      'value': 'minum_obat',
-      'label': 'Jadwal Minum Obat',
-      'icon': Icons.medication,
-    },
-    {
-      'value': 'kontrol',
-      'label': 'Jadwal Kontrol',
-      'icon': Icons.local_hospital,
-    },
-    {
-      'value': 'hemodialisis',
-      'label': 'Jadwal Hemodialisis',
-      'icon': Icons.water_drop,
-    },
+    {'value': 'minum_obat', 'label': 'Jadwal Minum Obat', 'icon': Icons.medication},
+    {'value': 'kontrol', 'label': 'Jadwal Kontrol', 'icon': Icons.local_hospital},
+    {'value': 'hemodialisis', 'label': 'Jadwal Hemodialisis', 'icon': Icons.water_drop},
   ];
 
   @override
   void initState() {
     super.initState();
     
-    // Check if edit mode
     if (widget.editData != null) {
       isEditMode = true;
       _loadEditData();
     } else {
-      // Default date for create mode
       DateTime now = DateTime.now();
-      selectedDate =
-          "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}";
+      selectedDate = "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}";
       dateController.text = selectedDate!;
     }
   }
@@ -110,7 +86,6 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       editId = data.id;
       drugNameController.text = data.drugName;
       
-      // Extract dose number from "X Tablet"
       final doseMatch = RegExp(r'\d+').firstMatch(data.dose);
       if (doseMatch != null) {
         doseController.text = doseMatch.group(0)!;
@@ -120,7 +95,6 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       at12 = data.at12;
       at18 = data.at18;
       
-      // Convert date from yyyy-MM-dd to dd-MM-yyyy
       selectedDate = _convertDateFromAPI(data.scheduleDate);
       dateController.text = selectedDate!;
       
@@ -139,7 +113,6 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
   }
 
   String _convertDateFromAPI(String apiDate) {
-    // Convert yyyy-MM-dd to dd-MM-yyyy
     try {
       final parts = apiDate.split('-');
       if (parts.length == 3) {
@@ -172,8 +145,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
 
     if (picked != null) {
       setState(() {
-        selectedDate =
-            "${picked.day.toString().padLeft(2, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.year}";
+        selectedDate = "${picked.day.toString().padLeft(2, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.year}";
         dateController.text = selectedDate!;
       });
     }
@@ -184,9 +156,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Konfirmasi Reset'),
-        content: const Text(
-          'Apakah Anda yakin ingin mereset semua isian form?',
-        ),
+        content: const Text('Apakah Anda yakin ingin mereset semua isian form?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -213,9 +183,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                 const SnackBar(content: Text('Form berhasil di-reset')),
               );
             },
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.tertiary,
-            ),
+            style: TextButton.styleFrom(foregroundColor: AppColors.tertiary),
             child: const Text('Reset'),
           ),
         ],
@@ -223,110 +191,11 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
     );
   }
 
-  Future<void> _scheduleNotificationsForDrug(
-    DrugScheduleResponseDTO schedule,
-  ) async {
-    try {
-      final dateParts = schedule.scheduleDate.split('-');
-      final year = int.parse(dateParts[0]);
-      final month = int.parse(dateParts[1]);
-      final day = int.parse(dateParts[2]);
-
-      if (schedule.at06) {
-        await NotificationService.scheduleDailyNotification(
-          id: schedule.id * 10 + 1,
-          title: 'Waktunya Minum Obat! 💊',
-          body: 'Saatnya minum ${schedule.drugName} - Dosis: ${schedule.dose}',
-          hour: 6,
-          minute: 0,
-          payload: 'drug_${schedule.id}',
-        );
-        print('✅ Notification scheduled for 06:00');
-      }
-
-      if (schedule.at12) {
-        await NotificationService.scheduleDailyNotification(
-          id: schedule.id * 10 + 2,
-          title: 'Waktunya Minum Obat! 💊',
-          body: 'Saatnya minum ${schedule.drugName} - Dosis: ${schedule.dose}',
-          hour: 12,
-          minute: 0,
-          payload: 'drug_${schedule.id}',
-        );
-        print('✅ Notification scheduled for 12:00');
-      }
-
-      if (schedule.at18) {
-        await NotificationService.scheduleDailyNotification(
-          id: schedule.id * 10 + 3,
-          title: 'Waktunya Minum Obat! 💊',
-          body: 'Saatnya minum ${schedule.drugName} - Dosis: ${schedule.dose}',
-          hour: 18,
-          minute: 0,
-          payload: 'drug_${schedule.id}',
-        );
-        print('✅ Notification scheduled for 18:00');
-      }
-
-      print('🔔 All notifications scheduled for ${schedule.drugName}');
-    } catch (e) {
-      print('❌ Error scheduling notifications: $e');
-    }
-  }
-
-  Future<void> _scheduleNotificationForControl(
-    ControlScheduleResponseDTO schedule,
-  ) async {
-    try {
-      final dateParts = schedule.controlDate.split('-');
-      final year = int.parse(dateParts[0]);
-      final month = int.parse(dateParts[1]);
-      final day = int.parse(dateParts[2]);
-
-      await NotificationService.scheduleDailyNotification(
-        id: schedule.id * 100,
-        title: 'Jadwal Kontrol Hari Ini! 🏥',
-        body: 'Jangan lupa jadwal kontrol Anda hari ini',
-        hour: 8,
-        minute: 0,
-        payload: 'control_${schedule.id}',
-      );
-      
-      print('✅ Control notification scheduled for ${schedule.controlDate} at 08:00');
-    } catch (e) {
-      print('❌ Error scheduling control notification: $e');
-    }
-  }
-
-  Future<void> _scheduleNotificationForHemodialysis(
-    HemodialysisScheduleResponseDTO schedule,
-  ) async {
-    try {
-      final dateParts = schedule.scheduleDate.split('-');
-      final year = int.parse(dateParts[0]);
-      final month = int.parse(dateParts[1]);
-      final day = int.parse(dateParts[2]);
-
-      await NotificationService.scheduleDailyNotification(
-        id: schedule.id * 1000,
-        title: 'Jadwal Hemodialisis Hari Ini! 💧',
-        body: 'Jangan lupa jadwal hemodialisis Anda hari ini',
-        hour: 8,
-        minute: 0,
-        payload: 'hemodialysis_${schedule.id}',
-      );
-      
-      print('✅ Hemodialysis notification scheduled for ${schedule.scheduleDate} at 08:00');
-    } catch (e) {
-      print('❌ Error scheduling hemodialysis notification: $e');
-    }
-  }
-
   String convertDateFormat(String ddMMyyyyDate) {
     try {
       final parts = ddMMyyyyDate.split('-');
       if (parts.length == 3) {
-        return '${parts[2]}-${parts[1]}-${parts[0]}'; // yyyy-MM-dd
+        return '${parts[2]}-${parts[1]}-${parts[0]}';
       }
     } catch (e) {
       print('⚠️ Date conversion error: $e');
@@ -354,19 +223,14 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
   Future<void> _handleDrugScheduleSubmit() async {
     if (!at06 && !at12 && !at18) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pilih minimal satu jam pengingat obat'),
-        ),
+        const SnackBar(content: Text('Pilih minimal satu jam pengingat obat')),
       );
       return;
     }
 
-    final String apiDateFormat = convertDateFormat(
-      selectedDate ?? dateController.text,
-    );
+    final String apiDateFormat = convertDateFormat(selectedDate ?? dateController.text);
 
     if (isEditMode && editId != null) {
-      // UPDATE mode
       final UpdateDrugScheduleDTO updateSchedule = UpdateDrugScheduleDTO(
         drugName: drugNameController.text,
         dose: doseController.text + ' Tablet',
@@ -380,9 +244,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: const Text('Konfirmasi Update'),
-          content: Text(
-            'Anda akan mengubah jadwal obat "${updateSchedule.drugName}" dengan dosis ${updateSchedule.dose} pada tanggal ${selectedDate}. Lanjutkan?',
-          ),
+          content: Text('Anda akan mengubah jadwal obat "${updateSchedule.drugName}" dengan dosis ${updateSchedule.dose} pada tanggal ${selectedDate}. Lanjutkan?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
@@ -391,35 +253,20 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
             TextButton(
               onPressed: () async {
                 Navigator.pop(dialogContext);
-
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (loadingContext) =>
-                      const Center(child: CircularProgressIndicator()),
-                );
+                showDialog(context: context, barrierDismissible: false, builder: (loadingContext) => const Center(child: CircularProgressIndicator()));
 
                 try {
-                  await _drugScheduleService.updateDrugSchedule(
-                    editId.toString(),
-                    updateSchedule,
-                  );
-
-                  _safeCloseDialog(); // Hide loading safely
-
+                  await _drugScheduleService.updateDrugSchedule(editId.toString(), updateSchedule);
+                  _safeCloseDialog();
                   await _safeShowDialog(
                     AlertDialog(
                       title: const Text('Berhasil 🎉'),
-                      content: Text(
-                        'Pengingat obat ${updateSchedule.drugName} berhasil diubah.',
-                      ),
+                      content: Text('Pengingat obat ${updateSchedule.drugName} berhasil diubah.'),
                       actions: [
                         TextButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            if (mounted) {
-                              Navigator.pop(context, true);
-                            }
+                            if (mounted) Navigator.pop(context, true);
                           },
                           child: const Text('OK'),
                         ),
@@ -427,34 +274,23 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                     ),
                   );
                 } catch (e) {
-                  _safeCloseDialog(); // Hide loading safely
-
+                  _safeCloseDialog();
                   await _safeShowDialog(
                     AlertDialog(
                       title: const Text('Gagal 😔'),
-                      content: Text(
-                        'Gagal mengubah pengingat obat: ${e.toString()}',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Tutup'),
-                        ),
-                      ],
+                      content: Text('Gagal mengubah pengingat obat: ${e.toString()}'),
+                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup'))],
                     ),
                   );
                 }
               },
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.tertiary,
-              ),
+              style: TextButton.styleFrom(foregroundColor: AppColors.tertiary),
               child: const Text('Update'),
             ),
           ],
         ),
       );
     } else {
-      // CREATE mode
       final CreateDrugScheduleDTO newSchedule = CreateDrugScheduleDTO(
         drugName: drugNameController.text,
         dose: doseController.text + ' Tablet',
@@ -468,49 +304,29 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: const Text('Konfirmasi Pembuatan'),
-          content: Text(
-            'Anda akan membuat jadwal obat "${newSchedule.drugName}" dengan dosis ${newSchedule.dose} pada tanggal ${selectedDate}. Lanjutkan?',
-          ),
+          content: Text('Anda akan membuat jadwal obat "${newSchedule.drugName}" dengan dosis ${newSchedule.dose} pada tanggal ${selectedDate}. Lanjutkan?'),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Batal'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
             TextButton(
               onPressed: () async {
                 Navigator.pop(dialogContext);
-
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (loadingContext) =>
-                      const Center(child: CircularProgressIndicator()),
-                );
+                showDialog(context: context, barrierDismissible: false, builder: (loadingContext) => const Center(child: CircularProgressIndicator()));
 
                 try {
-                  final response = await _drugScheduleService
-                      .createDrugSchedule(newSchedule);
-
-                  await _scheduleNotificationsForDrug(response);
-
+                  final response = await _drugScheduleService.createDrugSchedule(newSchedule);
                   if (!mounted) return;
-                  Navigator.pop(context); // Hide loading
-
+                  Navigator.pop(context);
                   if (!mounted) return;
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Berhasil 🎉'),
-                      content: Text(
-                        'Pengingat obat ${response.drugName} berhasil dibuat dan notifikasi telah dijadwalkan.',
-                      ),
+                      content: Text('Pengingat obat ${response.drugName} berhasil dibuat.'),
                       actions: [
                         TextButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            if (mounted) {
-                              Navigator.pop(context, true);
-                            }
+                            if (mounted) Navigator.pop(context, true);
                           },
                           child: const Text('OK'),
                         ),
@@ -519,29 +335,19 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                   );
                 } catch (e) {
                   if (!mounted) return;
-                  Navigator.pop(context); // Hide loading
-
+                  Navigator.pop(context);
                   if (!mounted) return;
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Gagal 😔'),
-                      content: Text(
-                        'Gagal membuat pengingat obat: ${e.toString()}',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Tutup'),
-                        ),
-                      ],
+                      content: Text('Gagal membuat pengingat obat: ${e.toString()}'),
+                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup'))],
                     ),
                   );
                 }
               },
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.tertiary,
-              ),
+              style: TextButton.styleFrom(foregroundColor: AppColors.tertiary),
               child: const Text('Buat'),
             ),
           ],
@@ -552,67 +358,42 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
 
   Future<void> _handleControlScheduleSubmit() async {
     if (selectedDate == null || selectedDate!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih tanggal kontrol')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih tanggal kontrol')));
       return;
     }
 
     final String apiDateFormat = convertDateFormat(selectedDate!);
 
     if (isEditMode && editId != null) {
-      // UPDATE mode
-      final UpdateControlScheduleDTO updateSchedule = UpdateControlScheduleDTO(
-        controlDate: apiDateFormat,
-      );
+      final UpdateControlScheduleDTO updateSchedule = UpdateControlScheduleDTO(controlDate: apiDateFormat);
 
       showDialog(
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: const Text('Konfirmasi Update'),
-          content: Text(
-            'Anda akan mengubah jadwal kontrol pada tanggal $selectedDate. Lanjutkan?',
-          ),
+          content: Text('Anda akan mengubah jadwal kontrol pada tanggal $selectedDate. Lanjutkan?'),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Batal'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
             TextButton(
               onPressed: () async {
                 Navigator.pop(dialogContext);
-
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (loadingContext) =>
-                      const Center(child: CircularProgressIndicator()),
-                );
+                showDialog(context: context, barrierDismissible: false, builder: (loadingContext) => const Center(child: CircularProgressIndicator()));
 
                 try {
-                  await _controlScheduleService.updateControlSchedule(
-                    editId!,
-                    updateSchedule,
-                  );
-
+                  await _controlScheduleService.updateControlSchedule(editId!, updateSchedule);
                   if (!mounted) return;
-                  Navigator.pop(context); // Hide loading
-
+                  Navigator.pop(context);
                   if (!mounted) return;
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Berhasil 🎉'),
-                      content: Text(
-                        'Jadwal kontrol pada ${selectedDate} berhasil diubah.',
-                      ),
+                      content: Text('Jadwal kontrol pada ${selectedDate} berhasil diubah.'),
                       actions: [
                         TextButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            if (mounted) {
-                              Navigator.pop(context, true);
-                            }
+                            if (mounted) Navigator.pop(context, true);
                           },
                           child: const Text('OK'),
                         ),
@@ -621,87 +402,54 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                   );
                 } catch (e) {
                   if (!mounted) return;
-                  Navigator.pop(context); // Hide loading
-
+                  Navigator.pop(context);
                   if (!mounted) return;
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Gagal 😔'),
-                      content: Text(
-                        'Gagal mengubah jadwal kontrol: ${e.toString()}',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Tutup'),
-                        ),
-                      ],
+                      content: Text('Gagal mengubah jadwal kontrol: ${e.toString()}'),
+                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup'))],
                     ),
                   );
                 }
               },
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.tertiary,
-              ),
+              style: TextButton.styleFrom(foregroundColor: AppColors.tertiary),
               child: const Text('Update'),
             ),
           ],
         ),
       );
     } else {
-      // CREATE mode
-      final CreateControlScheduleDTO newSchedule = CreateControlScheduleDTO(
-        controlDate: apiDateFormat,
-      );
+      final CreateControlScheduleDTO newSchedule = CreateControlScheduleDTO(controlDate: apiDateFormat);
 
       showDialog(
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: const Text('Konfirmasi Pembuatan'),
-          content: Text(
-            'Anda akan membuat jadwal kontrol pada tanggal $selectedDate. Lanjutkan?',
-          ),
+          content: Text('Anda akan membuat jadwal kontrol pada tanggal $selectedDate. Lanjutkan?'),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Batal'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
             TextButton(
               onPressed: () async {
                 Navigator.pop(dialogContext);
-
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (loadingContext) =>
-                      const Center(child: CircularProgressIndicator()),
-                );
+                showDialog(context: context, barrierDismissible: false, builder: (loadingContext) => const Center(child: CircularProgressIndicator()));
 
                 try {
-                  final response = await _controlScheduleService
-                      .createControlSchedule(newSchedule);
-
-                  await _scheduleNotificationForControl(response);
-
+                  final response = await _controlScheduleService.createControlSchedule(newSchedule);
                   if (!mounted) return;
-                  Navigator.pop(context); // Hide loading
-
+                  Navigator.pop(context);
                   if (!mounted) return;
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Berhasil 🎉'),
-                      content: Text(
-                        'Jadwal kontrol pada ${selectedDate} berhasil dibuat dan notifikasi telah dijadwalkan.',
-                      ),
+                      content: Text('Jadwal kontrol pada ${selectedDate} berhasil dibuat.'),
                       actions: [
                         TextButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            if (mounted) {
-                              Navigator.pop(context, true);
-                            }
+                            if (mounted) Navigator.pop(context, true);
                           },
                           child: const Text('OK'),
                         ),
@@ -710,29 +458,19 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                   );
                 } catch (e) {
                   if (!mounted) return;
-                  Navigator.pop(context); // Hide loading
-
+                  Navigator.pop(context);
                   if (!mounted) return;
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Gagal 😔'),
-                      content: Text(
-                        'Gagal membuat jadwal kontrol: ${e.toString()}',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Tutup'),
-                        ),
-                      ],
+                      content: Text('Gagal membuat jadwal kontrol: ${e.toString()}'),
+                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup'))],
                     ),
                   );
                 }
               },
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.tertiary,
-              ),
+              style: TextButton.styleFrom(foregroundColor: AppColors.tertiary),
               child: const Text('Buat'),
             ),
           ],
@@ -743,67 +481,42 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
 
   Future<void> _handleHemodialysisScheduleSubmit() async {
     if (selectedDate == null || selectedDate!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih tanggal hemodialisis')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih tanggal hemodialisis')));
       return;
     }
 
     final String apiDateFormat = convertDateFormat(selectedDate!);
 
     if (isEditMode && editId != null) {
-      // UPDATE mode
-      final UpdateHemodialysisScheduleDTO updateSchedule = UpdateHemodialysisScheduleDTO(
-        scheduleDate: apiDateFormat,
-      );
+      final UpdateHemodialysisScheduleDTO updateSchedule = UpdateHemodialysisScheduleDTO(scheduleDate: apiDateFormat);
 
       showDialog(
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: const Text('Konfirmasi Update'),
-          content: Text(
-            'Anda akan mengubah jadwal hemodialisis pada tanggal $selectedDate. Lanjutkan?',
-          ),
+          content: Text('Anda akan mengubah jadwal hemodialisis pada tanggal $selectedDate. Lanjutkan?'),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Batal'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
             TextButton(
               onPressed: () async {
                 Navigator.pop(dialogContext);
-
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (loadingContext) =>
-                      const Center(child: CircularProgressIndicator()),
-                );
+                showDialog(context: context, barrierDismissible: false, builder: (loadingContext) => const Center(child: CircularProgressIndicator()));
 
                 try {
-                  await _hemodialysisScheduleService.updateHemodialysisSchedule(
-                    editId!,
-                    updateSchedule,
-                  );
-
+                  await _hemodialysisScheduleService.updateHemodialysisSchedule(editId!, updateSchedule);
                   if (!mounted) return;
-                  Navigator.pop(context); // Hide loading
-
+                  Navigator.pop(context);
                   if (!mounted) return;
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Berhasil 🎉'),
-                      content: Text(
-                        'Jadwal hemodialisis pada ${selectedDate} berhasil diubah.',
-                      ),
+                      content: Text('Jadwal hemodialisis pada ${selectedDate} berhasil diubah.'),
                       actions: [
                         TextButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            if (mounted) {
-                              Navigator.pop(context, true);
-                            }
+                            if (mounted) Navigator.pop(context, true);
                           },
                           child: const Text('OK'),
                         ),
@@ -812,87 +525,54 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                   );
                 } catch (e) {
                   if (!mounted) return;
-                  Navigator.pop(context); // Hide loading
-
+                  Navigator.pop(context);
                   if (!mounted) return;
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Gagal 😔'),
-                      content: Text(
-                        'Gagal mengubah jadwal hemodialisis: ${e.toString()}',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Tutup'),
-                        ),
-                      ],
+                      content: Text('Gagal mengubah jadwal hemodialisis: ${e.toString()}'),
+                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup'))],
                     ),
                   );
                 }
               },
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.tertiary,
-              ),
+              style: TextButton.styleFrom(foregroundColor: AppColors.tertiary),
               child: const Text('Update'),
             ),
           ],
         ),
       );
     } else {
-      // CREATE mode
-      final CreateHemodialysisScheduleDTO newSchedule = CreateHemodialysisScheduleDTO(
-        scheduleDate: apiDateFormat,
-      );
+      final CreateHemodialysisScheduleDTO newSchedule = CreateHemodialysisScheduleDTO(scheduleDate: apiDateFormat);
 
       showDialog(
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: const Text('Konfirmasi Pembuatan'),
-          content: Text(
-            'Anda akan membuat jadwal hemodialisis pada tanggal $selectedDate. Lanjutkan?',
-          ),
+          content: Text('Anda akan membuat jadwal hemodialisis pada tanggal $selectedDate. Lanjutkan?'),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Batal'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
             TextButton(
               onPressed: () async {
                 Navigator.pop(dialogContext);
-
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (loadingContext) =>
-                      const Center(child: CircularProgressIndicator()),
-                );
+                showDialog(context: context, barrierDismissible: false, builder: (loadingContext) => const Center(child: CircularProgressIndicator()));
 
                 try {
-                  final response = await _hemodialysisScheduleService
-                      .createHemodialysisSchedule(newSchedule);
-
-                  await _scheduleNotificationForHemodialysis(response);
-
+                  final response = await _hemodialysisScheduleService.createHemodialysisSchedule(newSchedule);
                   if (!mounted) return;
-                  Navigator.pop(context); // Hide loading
-
+                  Navigator.pop(context);
                   if (!mounted) return;
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Berhasil 🎉'),
-                      content: Text(
-                        'Jadwal hemodialisis pada ${selectedDate} berhasil dibuat dan notifikasi telah dijadwalkan.',
-                      ),
+                      content: Text('Jadwal hemodialisis pada ${selectedDate} berhasil dibuat.'),
                       actions: [
                         TextButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            if (mounted) {
-                              Navigator.pop(context, true);
-                            }
+                            if (mounted) Navigator.pop(context, true);
                           },
                           child: const Text('OK'),
                         ),
@@ -901,29 +581,19 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                   );
                 } catch (e) {
                   if (!mounted) return;
-                  Navigator.pop(context); // Hide loading
-
+                  Navigator.pop(context);
                   if (!mounted) return;
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Gagal 😔'),
-                      content: Text(
-                        'Gagal membuat jadwal hemodialisis: ${e.toString()}',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Tutup'),
-                        ),
-                      ],
+                      content: Text('Gagal membuat jadwal hemodialisis: ${e.toString()}'),
+                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup'))],
                     ),
                   );
                 }
               },
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.tertiary,
-              ),
+              style: TextButton.styleFrom(foregroundColor: AppColors.tertiary),
               child: const Text('Buat'),
             ),
           ],
@@ -936,21 +606,11 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Pilih Kategori',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        const Text('Pilih Kategori', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
           child: DropdownButtonFormField<String>(
             key: const ValueKey('categoryDropdown'),
             value: selectedCategory,
@@ -960,16 +620,12 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
             items: categories.map((category) {
               return DropdownMenuItem<String>(
                 value: category['value'],
-                enabled: !isEditMode, // Disable in edit mode
+                enabled: !isEditMode,
                 child: Row(
                   children: [
-                    Icon(
-                      category['icon'],
-                      size: 20,
-                      color: AppColors.secondary,
-                    ),
+                    Icon(category['icon'], size: 20, color: isEditMode ? Colors.grey : AppColors.secondary),
                     const SizedBox(width: 12),
-                    Text(category['label']),
+                    Text(category['label'], style: TextStyle(color: isEditMode ? Colors.grey : Colors.black)),
                   ],
                 ),
               );
@@ -984,18 +640,13 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                 at18 = false;
                 selectedTime = null;
                 timeController.clear();
-
-                // Reset date and set default
                 DateTime now = DateTime.now();
-                selectedDate =
-                    "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}";
+                selectedDate = "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}";
                 dateController.text = selectedDate!;
               });
             },
             validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Kategori wajib dipilih';
-              }
+              if (value == null || value.isEmpty) return 'Kategori wajib dipilih';
               return null;
             },
           ),
@@ -1009,152 +660,67 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        const Text(
-          'Nama Obat',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        const Text('Nama Obat', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
           child: TextFormField(
             controller: drugNameController,
-            decoration: const InputDecoration(
-              hintText: 'Masukkan nama obat',
-              border: InputBorder.none,
-            ),
+            decoration: const InputDecoration(hintText: 'Masukkan nama obat', border: InputBorder.none),
             validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Nama obat wajib diisi';
-              }
+              if (value == null || value.isEmpty) return 'Nama obat wajib diisi';
               return null;
             },
             onChanged: (value) => drugName = value,
           ),
         ),
         const SizedBox(height: 20),
-        const Text(
-          'Dosis',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        const Text('Dosis', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
           child: TextFormField(
             controller: doseController,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              hintText: 'Masukkan dosis',
-              suffixText: 'Tablet',
-            ),
+            decoration: const InputDecoration(border: InputBorder.none, hintText: 'Masukkan dosis', suffixText: 'Tablet'),
             validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Dosis wajib diisi';
-              }
-              if (int.tryParse(value) == null || int.parse(value) <= 0) {
-                return 'Dosis harus angka positif';
-              }
+              if (value == null || value.isEmpty) return 'Dosis wajib diisi';
+              if (int.tryParse(value) == null || int.parse(value) <= 0) return 'Dosis harus angka positif';
               return null;
             },
-            onChanged: (value) {
-              dose = value;
-            },
+            onChanged: (value) => dose = value,
           ),
         ),
         const SizedBox(height: 20),
-        const Text(
-          'Pilih Tanggal Mulai',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        const Text('Pilih Tanggal Mulai', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         InkWell(
           onTap: _selectDate,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-            ),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  selectedDate ?? 'Pilih tanggal mulai pengingat',
-                  style: TextStyle(
-                    color: selectedDate != null ? Colors.black : Colors.grey,
-                  ),
-                ),
+                Text(selectedDate ?? 'Pilih tanggal mulai pengingat', style: TextStyle(color: selectedDate != null ? Colors.black : Colors.grey)),
                 const Icon(Icons.calendar_today, color: Colors.grey),
               ],
             ),
           ),
         ),
         const SizedBox(height: 20),
-        const Text(
-          'Pilih Jam Pengingat',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        const Text('Pilih Jam Pengingat', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
-        _buildTimeCheckbox(
-          title: 'Pagi (06:00 WIB)',
-          value: at06,
-          onChanged: (bool? newValue) {
-            setState(() {
-              at06 = newValue!;
-            });
-          },
-        ),
-        _buildTimeCheckbox(
-          title: 'Siang (12:00 WIB)',
-          value: at12,
-          onChanged: (bool? newValue) {
-            setState(() {
-              at12 = newValue!;
-            });
-          },
-        ),
-        _buildTimeCheckbox(
-          title: 'Sore (18:00 WIB)',
-          value: at18,
-          onChanged: (bool? newValue) {
-            setState(() {
-              at18 = newValue!;
-            });
-          },
-        ),
+        _buildTimeCheckbox(title: 'Pagi (06:00 WIB)', value: at06, onChanged: (v) => setState(() => at06 = v!)),
+        _buildTimeCheckbox(title: 'Siang (12:00 WIB)', value: at12, onChanged: (v) => setState(() => at12 = v!)),
+        _buildTimeCheckbox(title: 'Sore (18:00 WIB)', value: at18, onChanged: (v) => setState(() => at18 = v!)),
       ],
     );
   }
 
-  Widget _buildTimeCheckbox({
-    required String title,
-    required bool value,
-    required ValueChanged<bool?> onChanged,
-  }) {
+  Widget _buildTimeCheckbox({required String title, required bool value, required ValueChanged<bool?> onChanged}) {
     return CheckboxListTile(
       title: Text(title, style: const TextStyle(color: Colors.white)),
       value: value,
@@ -1171,59 +737,20 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        const Text(
-          'Pilih Tanggal Kontrol',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        const Text('Pilih Tanggal Kontrol', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         InkWell(
           onTap: _selectDate,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-            ),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  selectedDate ?? 'Pilih tanggal kontrol',
-                  style: TextStyle(
-                    color: selectedDate != null ? Colors.black : Colors.grey,
-                  ),
-                ),
+                Text(selectedDate ?? 'Pilih tanggal kontrol', style: TextStyle(color: selectedDate != null ? Colors.black : Colors.grey)),
                 const Icon(Icons.calendar_today, color: Colors.grey),
               ],
             ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.info_outline, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Notifikasi akan dikirim pada pukul 08:00 WIB di tanggal yang dipilih',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
           ),
         ),
       ],
@@ -1235,59 +762,20 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        const Text(
-          'Pilih Tanggal Hemodialisis',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        const Text('Pilih Tanggal Hemodialisis', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         InkWell(
           onTap: _selectDate,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-            ),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  selectedDate ?? 'Pilih tanggal hemodialisis',
-                  style: TextStyle(
-                    color: selectedDate != null ? Colors.black : Colors.grey,
-                  ),
-                ),
+                Text(selectedDate ?? 'Pilih tanggal hemodialisis', style: TextStyle(color: selectedDate != null ? Colors.black : Colors.grey)),
                 const Icon(Icons.calendar_today, color: Colors.grey),
               ],
             ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.info_outline, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Notifikasi akan dikirim pada pukul 08:00 WIB di tanggal yang dipilih',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
           ),
         ),
       ],
@@ -1314,11 +802,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                     child: Text(
                       isEditMode ? 'EDIT PENGINGAT' : 'BUAT PENGINGAT',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                   ),
                   const SizedBox(width: 48),
@@ -1361,17 +845,9 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                           backgroundColor: Colors.grey.shade700,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: const Text(
-                          'RESET',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        child: const Text('RESET', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -1384,17 +860,9 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                         backgroundColor: AppColors.tertiary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: Text(
-                        isEditMode ? 'UPDATE' : 'BUAT',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: Text(isEditMode ? 'UPDATE' : 'BUAT', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
