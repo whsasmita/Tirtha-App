@@ -45,87 +45,99 @@ class EducationService {
   }
 
   Future<List<EducationModel>> fetchAllEducations({
-    int page = 1,
-    int limit = 10,
-  }) async {
-    try {
-      final response = await ApiClient.dio.get(
-        '/educations/',
-        queryParameters: {
-          'page': page,
-          'limit': limit,
-        },
-      );
+  int page = 1,
+  int limit = 10,
+}) async {
+  try {
+    final response = await ApiClient.dio.get(
+      '/educations/',
+      queryParameters: {
+        'page': page,
+        'limit': limit,
+      },
+    );
+    
+    // 💡 Perbaikan: Jika data['data'] ada dan berupa List (bahkan kosong),
+    // kembalikan hasil mapping. Jika tidak, lemparkan Exception.
+    if (response.data != null && response.data['data'] is List) {
+      List<dynamic> dataList = response.data['data'];
       
-      if (response.data != null && response.data['data'] is List) {
-        List<dynamic> dataList = response.data['data'];
-        
-        return dataList.map((json) => EducationModel.fromJson(json)).toList();
-      }
-      
-      throw Exception('Format data edukasi dari server tidak valid.');
-      
-    } on DioException catch (e) {
-      String errorMessage = 'Gagal memuat edukasi. Coba lagi.';
-      
-      if (e.response != null && e.response!.data is Map) {
-        errorMessage = e.response!.data['message']?.toString() ?? 
-                      e.response!.statusMessage ?? 
-                      'Permintaan gagal.';
-      } else if (e.type == DioExceptionType.connectionTimeout) {
-        errorMessage = 'Koneksi timeout. Periksa internet Anda.';
-      } else if (e.type == DioExceptionType.receiveTimeout) {
-        errorMessage = 'Server tidak merespons. Coba lagi.';
-      } else if (e.type == DioExceptionType.connectionError) {
-        errorMessage = 'Tidak dapat terhubung ke server.';
-      }
-      
-      throw Exception(errorMessage);
-    } catch (e) {
-      throw Exception('Terjadi kesalahan: ${e.toString()}');
+      // Jika dataList kosong, map() akan mengembalikan list kosong yang valid.
+      return dataList.map((json) => EducationModel.fromJson(json)).toList();
     }
+    
+    // Jika respons.data tidak ada atau 'data' bukan List, ini adalah format yang tidak valid.
+    throw Exception('Format data edukasi dari server tidak valid.');
+    
+  } on DioException catch (e) {
+    // ... (kode penanganan error sudah cukup baik)
+    String errorMessage = 'Gagal memuat edukasi. Coba lagi.';
+    
+    if (e.response != null && e.response!.data is Map) {
+      errorMessage = e.response!.data['message']?.toString() ?? 
+                       e.response!.statusMessage ?? 
+                       'Permintaan gagal.';
+    } else if (e.type == DioExceptionType.connectionTimeout) {
+      errorMessage = 'Koneksi timeout. Periksa internet Anda.';
+    } else if (e.type == DioExceptionType.receiveTimeout) {
+      errorMessage = 'Server tidak merespons. Coba lagi.';
+    } else if (e.type == DioExceptionType.connectionError) {
+      errorMessage = 'Tidak dapat terhubung ke server.';
+    }
+    
+    throw Exception(errorMessage);
+  } catch (e) {
+    // Menangkap error dari EducationModel.fromJson (jika masih ada) atau error lain
+    throw Exception('Terjadi kesalahan: ${e.toString()}');
   }
+}
 
   /// Fetch education dengan total count untuk pagination
-  Future<EducationResponse> fetchEducationsWithMeta({
-    int page = 1,
-    int limit = 10,
-  }) async {
-    try {
-      final response = await ApiClient.dio.get(
-        '/educations/',
-        queryParameters: {
-          'page': page,
-          'limit': limit,
-        },
-      );
-      
-      if (response.data != null) {
-        return EducationResponse.fromJson(response.data);
-      }
-      
-      throw Exception('Format data edukasi dari server tidak valid.');
-      
-    } on DioException catch (e) {
-      String errorMessage = 'Gagal memuat edukasi. Coba lagi.';
-      
-      if (e.response != null && e.response!.data is Map) {
-        errorMessage = e.response!.data['message']?.toString() ?? 
-                      e.response!.statusMessage ?? 
-                      'Permintaan gagal.';
-      } else if (e.type == DioExceptionType.connectionTimeout) {
-        errorMessage = 'Koneksi timeout. Periksa internet Anda.';
-      } else if (e.type == DioExceptionType.receiveTimeout) {
-        errorMessage = 'Server tidak merespons. Coba lagi.';
-      } else if (e.type == DioExceptionType.connectionError) {
-        errorMessage = 'Tidak dapat terhubung ke server.';
-      }
-      
-      throw Exception(errorMessage);
-    } catch (e) {
-      throw Exception('Terjadi kesalahan: ${e.toString()}');
+  // Di EducationService class
+
+Future<EducationResponse> fetchEducationsWithMeta({
+  int page = 1,
+  int limit = 10,
+}) async {
+  try {
+    final response = await ApiClient.dio.get(
+      '/educations/',
+      queryParameters: {
+        'page': page,
+        'limit': limit,
+      },
+    );
+    
+    // 💡 Perbaikan: Pastikan respons tidak null sebelum diproses oleh EducationResponse.fromJson
+    if (response.data != null && response.data is Map<String, dynamic>) {
+      // EducationResponse.fromJson sudah memiliki logika untuk menangani list kosong []
+      return EducationResponse.fromJson(response.data);
     }
+    
+    // Jika respons kosong atau bukan map, anggap tidak valid.
+    throw Exception('Format data edukasi dari server tidak valid.');
+    
+  } on DioException catch (e) {
+    // ... (kode penanganan error yang sama)
+    String errorMessage = 'Gagal memuat edukasi. Coba lagi.';
+    
+    if (e.response != null && e.response!.data is Map) {
+      errorMessage = e.response!.data['message']?.toString() ?? 
+                       e.response!.statusMessage ?? 
+                       'Permintaan gagal.';
+    } else if (e.type == DioExceptionType.connectionTimeout) {
+      errorMessage = 'Koneksi timeout. Periksa internet Anda.';
+    } else if (e.type == DioExceptionType.receiveTimeout) {
+      errorMessage = 'Server tidak merespons. Coba lagi.';
+    } else if (e.type == DioExceptionType.connectionError) {
+      errorMessage = 'Tidak dapat terhubung ke server.';
+    }
+    
+    throw Exception(errorMessage);
+  } catch (e) {
+    throw Exception('Terjadi kesalahan: ${e.toString()}');
   }
+}
 
   Future<void> updateEducation(int id, String name, String url, XFile? thumbnail) async {
     try {
@@ -164,16 +176,19 @@ class EducationService {
     try {
       final response = await ApiClient.dio.get('/educations/$id');
       
-      if (response.statusCode == 200 && response.data != null) {
-        if (response.data['data'] != null) { 
-          // Asumsi respons JSON tunggal di dalam kunci 'data'
-          return EducationModel.fromJson(response.data['data']);
-        }
-        throw Exception('Data edukasi tidak ditemukan dalam respons.');
+      // 💡 Pastikan respons.data['data'] ada dan berupa Map
+      final dynamic responseData = response.data['data']; 
+
+      if (response.statusCode == 200 && responseData is Map<String, dynamic>) {
+        return EducationModel.fromJson(responseData);
       }
-      throw Exception('Gagal mendapatkan detail edukasi.');
+      
+      throw Exception('Data edukasi tidak valid atau tidak ditemukan.');
+
     } on DioException catch (e) {
       throw Exception(e.response?.data['message'] ?? 'Koneksi gagal atau Edukasi tidak ditemukan.');
+    } catch (e) {
+      throw Exception('Gagal mendapatkan detail edukasi: ${e.toString()}');
     }
   }
 

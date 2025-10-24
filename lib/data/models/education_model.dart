@@ -4,8 +4,8 @@ class EducationModel {
   final String url;
   final String thumbnail;
   final int createdBy;
-  final String createdAt;
-  final String updatedAt;
+  final String? createdAt; // 💡 Diubah menjadi nullable
+  final String? updatedAt; // 💡 Diubah menjadi nullable
 
   EducationModel({
     required this.id,
@@ -13,21 +13,20 @@ class EducationModel {
     required this.url,
     required this.thumbnail,
     required this.createdBy,
-    required this.createdAt,
-    required this.updatedAt,
+    this.createdAt, // 💡 Hapus required
+    this.updatedAt, // 💡 Hapus required
   });
 
   factory EducationModel.fromJson(Map<String, dynamic> json) {
     return EducationModel(
-      // 💡 Perbaikan: Mengganti PascalCase ke snake_case/lowercase
+      // Kunci yang dikoreksi ke snake_case dan penanganan nullable
       id: json['id'] as int, 
       name: json['name'] as String,
       url: json['url'] as String,
       thumbnail: json['thumbnail'] as String,
       createdBy: json['created_by'] as int, 
-      // Asumsi key untuk waktu juga menggunakan snake_case
-      createdAt: json['created_at'] as String, 
-      updatedAt: json['updated_at'] as String,
+      createdAt: json['created_at'] as String?, // Gunakan String?
+      updatedAt: json['updated_at'] as String?, // Gunakan String?
     );
   }
 }
