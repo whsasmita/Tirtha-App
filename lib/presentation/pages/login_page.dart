@@ -41,15 +41,15 @@ class _LoginPageState extends State<LoginPage> {
     if (message.toLowerCase().contains('email atau password')) {
       title = 'Login Gagal';
       icon = Icons.lock_outline;
-    } else if (message.toLowerCase().contains('koneksi') || 
-               message.toLowerCase().contains('jaringan')) {
+    } else if (message.toLowerCase().contains('koneksi') ||
+        message.toLowerCase().contains('jaringan')) {
       title = 'Masalah Koneksi';
       icon = Icons.wifi_off;
     } else if (message.toLowerCase().contains('server')) {
       title = 'Server Bermasalah';
       icon = Icons.cloud_off;
     } else if (message.toLowerCase().contains('tidak lengkap') ||
-               message.toLowerCase().contains('tidak boleh kosong')) {
+        message.toLowerCase().contains('tidak boleh kosong')) {
       title = 'Input Tidak Lengkap';
       icon = Icons.warning_amber_rounded;
       iconColor = Colors.orange;
@@ -116,21 +116,43 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  // 💡 Salin fungsi _getDeviceTimezone dari RegisterPage
+  String _getDeviceTimezone() {
+    final now = DateTime.now();
+    final offset = now.timeZoneOffset;
+
+    final offsetInHours = offset.inHours;
+
+    switch (offsetInHours) {
+      case 7:
+        return 'Asia/Jakarta';
+      case 8:
+        return 'Asia/Makassar';
+      case 9:
+        return 'Asia/Jayapura';
+      default:
+        final sign = offset.isNegative ? '-' : '+';
+        final hours = offset.inHours.abs().toString().padLeft(2, '0');
+        final minutes = (offset.inMinutes.abs() % 60).toString().padLeft(2, '0');
+        return 'UTC$sign$hours:$minutes';
+    }
+  }
+
   /// Mendapatkan FCM Token dari Firebase
   Future<String?> _getFcmToken() async {
     try {
       String? token = await FirebaseMessaging.instance.getToken();
-      
+
       if (token != null) {
         print('╔════════════════════════════════════════╗');
-        print('║          FCM TOKEN BERHASIL            ║');
+        print('║           FCM TOKEN BERHASIL           ║');
         print('╠════════════════════════════════════════╣');
         print('║ Token: $token');
         print('╚════════════════════════════════════════╝');
       } else {
         print('⚠️ FCM Token tidak tersedia');
       }
-      
+
       return token;
     } catch (e) {
       print('❌ Error mendapatkan FCM token: $e');
@@ -138,7 +160,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  /// Handle Login dengan FCM Token
+  /// Handle Login dengan FCM Token dan Timezone
   Future<void> _handleLogin() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -163,42 +185,48 @@ class _LoginPageState extends State<LoginPage> {
       // 1. Dapatkan FCM Token
       print('🔄 Mengambil FCM Token...');
       String? fcmToken = await _getFcmToken();
-      
+
       if (fcmToken != null) {
         print('✅ FCM Token berhasil didapatkan');
       } else {
         print('⚠️ Login tanpa FCM Token (notifikasi mungkin tidak berfungsi)');
       }
+      
+      // 2. 💡 Dapatkan Timezone Perangkat
+      final String timezone = _getDeviceTimezone();
+      print('🌎 Timezone detected: $timezone');
 
-      // 2. Login dengan email, password, dan FCM token
+
+      // 3. Login dengan email, password, FCM token, dan timezone
       print('🔄 Proses login ke server...');
-      final user = await _authService.login(email, password, fcmToken);
+      // 💡 Teruskan timezone ke _authService.login()
+      final user = await _authService.login(email, password, fcmToken, timezone);
 
       print('✅ Login berhasil!');
       print('👤 User: ${user.name ?? 'Unknown'}');
       print('📧 Email: ${user.email ?? 'Unknown'}');
-      
+
       if (fcmToken != null) {
         print('🔔 FCM Token berhasil disimpan ke database');
       }
 
-      // 3. Navigate ke home page
+      // 4. Navigate ke home page
       if (mounted) {
         Navigator.pushReplacementNamed(context, AppRoutes.home);
       }
     } catch (e) {
       print('❌ Error during login: $e');
-      
+
       // Ambil pesan error
       String errorMessage = e.toString();
-      
+
       // Hapus prefix "Exception: " jika ada
       if (errorMessage.startsWith('Exception: ')) {
         errorMessage = errorMessage.substring('Exception: '.length);
       }
-      
+
       print('📝 Error message: $errorMessage');
-      
+
       // Tampilkan dialog error dengan pesan dari AuthService
       if (mounted) {
         _showErrorDialog(errorMessage);

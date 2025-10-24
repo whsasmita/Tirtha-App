@@ -15,12 +15,12 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get role => _user?.role;
 
-  Future<void> login(String email, String password, String? fcmToken) async {
+  Future<void> login(String email, String password, String? fcmToken, String timezone) async {
     try {
       _isLoading = true;
       notifyListeners();
 
-      await _authService.login(email, password, fcmToken);
+      await _authService.login(email, password, fcmToken, timezone);
       
       // setelah login sukses → ambil profil
       final userProfile = await _authService.getUserProfile();

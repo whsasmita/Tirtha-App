@@ -44,11 +44,19 @@ class AuthService {
     String email,
     String password,
     String? fcmToken,
+    // 💡 Tambahkan parameter timezone di sini
+    String timezone,
   ) async {
     try {
       final response = await ApiClient.dio.post(
         '/auth/login',
-        data: {'email': email, 'password': password, 'fcm_token': fcmToken},
+        data: {
+          'email': email,
+          'password': password,
+          'fcm_token': fcmToken,
+          // 💡 Kirimkan timezone dalam body permintaan
+          'timezone': timezone,
+        },
         options: Options(
           headers: {Headers.contentTypeHeader: Headers.jsonContentType},
         ),
@@ -63,6 +71,8 @@ class AuthService {
         final userDataMap =
             profileResponse.data['data'] as Map<String, dynamic>;
         final userData = UserModel.fromJson(userDataMap);
+        
+        print("Login berhasil. Timezone yang dikirim: $timezone"); // Tambahkan log
 
         return userData;
       } else {
@@ -93,8 +103,7 @@ class AuthService {
 
       final userDataMap = response.data['data'] as Map<String, dynamic>; 
     
-    // final userData = UserModel.fromJson(response.data); // <-- BARIS LAMA
-    final userData = UserModel.fromJson(userDataMap);
+      final userData = UserModel.fromJson(userDataMap);
       return userData;
     } on DioException catch (e) {
       if (e.response != null && e.response!.data != null) {

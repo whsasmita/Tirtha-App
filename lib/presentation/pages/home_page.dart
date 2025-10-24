@@ -8,9 +8,11 @@ import '../widgets/menu_header.dart';
 import '../widgets/section_home_card.dart';
 import 'package:tirtha_app/data/models/education_model.dart';
 import 'package:tirtha_app/data/models/quiz_model.dart';
+import 'package:tirtha_app/data/models/user_model.dart';
+import 'package:tirtha_app/core/services/auth_service.dart';
 import 'package:tirtha_app/core/services/education_service.dart';
 import 'package:tirtha_app/core/services/quiz_service.dart';
-import 'package:tirtha_app/presentation/themes/color.dart'; // Asumsi AppColors diimport dari sini
+import 'package:tirtha_app/presentation/themes/color.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -25,10 +27,11 @@ class _HomePageState extends State<HomePage> {
   // Konstanta untuk konsistensi ukuran card
   static const double _cardWidth = 160;
   static const double _cardAspectRatio = 1.4; // width / height = 1.4
-  
-  // Tinggi yang dibutuhkan: (Width / AspectRatio) + Padding Vertikal Card ≈ 114 + 66 = 180
   static const double _requiredCardHeight = 180.0; 
 
+  // PERBAIKAN: Ganti 'late' menjadi 'nullable' (?) untuk menghindari LateInitializationError.
+  Future<UserModel?>? _userProfileFuture;
+  
   // State untuk education
   List<EducationModel> educationItems = [];
   bool isLoadingEducation = true;
@@ -42,7 +45,30 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    // Inisialisasi future untuk profil di initState
+    _userProfileFuture = AuthService().getUserProfile(); 
     _loadData();
+  }
+
+  // Helper untuk memformat nama: Kapitalisasi dan Batasan 3 Kata
+  String _formatUserName(String? fullName) {
+    if (fullName == null || fullName.trim().isEmpty) return 'Pengguna';
+
+    // Memisahkan kata dan menghapus spasi berlebih
+    final words = fullName.trim().split(RegExp(r'\s+'));
+
+    // Mengambil maksimum 3 kata pertama
+    final limitedWords = words.take(3).toList();
+
+    // Mengkapitalisasi setiap kata
+    final capitalizedWords = limitedWords.map((word) {
+      if (word.isEmpty) return '';
+      // Memastikan kata diawali huruf besar, sisa huruf kecil
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).toList();
+
+    // Menggabungkan kembali
+    return capitalizedWords.join(' ');
   }
 
   Future<void> _loadData() async {
@@ -188,7 +214,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildEducationSection() {
-    // Gunakan tinggi yang dihitung agar konsisten dengan EducationListPage
     const double requiredHeight = _requiredCardHeight; 
 
     if (isLoadingEducation) {
@@ -242,12 +267,12 @@ class _HomePageState extends State<HomePage> {
         itemBuilder: (context, index) {
           final item = educationItems[index];
           return Container(
-            width: _cardWidth, // Lebar yang konsisten
+            width: _cardWidth, 
             margin: const EdgeInsets.only(right: 12),
             child: GridItemCard(
-              // Pastikan GridItemCard Anda mendukung aspek rasio untuk konsistensi
               aspectRatio: _cardAspectRatio, 
-              imageUrl: item.thumbnail, // Menampilkan thumbnail dari API
+              // Cek jika thumbnail kosong, gunakan placeholder
+              imageUrl: item.thumbnail.isNotEmpty ? item.thumbnail : 'assets/default_education.png',
               title: item.name,
               onTap: () => _launchURL(item.url),
             ),
@@ -340,32 +365,53 @@ class _HomePageState extends State<HomePage> {
               children: [
                 // Header Welcome - Centered
                 Center(
-                  child: Column(
-                    children: [
-                      RichText(
-                        text: const TextSpan(
-                          style: TextStyle(fontSize: 20, color: Colors.black),
-                          children: [
-                            TextSpan(text: 'Selamat Datang di '),
-                            TextSpan(
-                              text: 'TIRTHA',
-                              style: TextStyle(
-                                color: Color(0xFF00BFA5),
-                                fontWeight: FontWeight.bold,
-                              ),
+                  child: FutureBuilder<UserModel?>(
+                    // FutureBuilder menggunakan variabel _userProfileFuture
+                    future: _userProfileFuture,
+                    builder: (context, snapshot) {
+                      String userName = 'Memuat...';
+                      
+                      if (snapshot.connectionState == ConnectionState.done) {
+                        if (snapshot.hasData && snapshot.data!.name != null) {
+                          // Terapkan format pada nama yang diambil
+                          userName = _formatUserName(snapshot.data!.name);
+                        } else {
+                          // Fallback jika error atau data null
+                          userName = 'WAHYU HS'; 
+                          if (snapshot.hasError) {
+                              print('Error loading user profile: ${snapshot.error}');
+                          }
+                        }
+                      }
+
+                      return Column(
+                        children: [
+                          RichText(
+                            text: const TextSpan(
+                              style: TextStyle(fontSize: 20, color: Colors.black),
+                              children: [
+                                TextSpan(text: 'Selamat Datang di '),
+                                TextSpan(
+                                  text: 'TIRTHA',
+                                  style: TextStyle(
+                                    color: Color(0xFF00BFA5),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'WAHYU HS',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            userName, // Tampilkan nama yang sudah diformat
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 24),

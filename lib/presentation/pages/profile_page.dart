@@ -1,3 +1,5 @@
+// File: profile_page.dart (Diperbarui)
+
 import 'package:flutter/material.dart';
 import 'package:tirtha_app/presentation/themes/color.dart';
 import 'package:tirtha_app/presentation/widgets/bottom_nav_v1.dart';
@@ -36,6 +38,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<int> _getEducationCount() async {
     try {
+      // Memanggil API dengan fetchAllEducations, perlu dipastikan API mengembalikan total count
+      // atau mengimplementasikan fetchEducationsWithMeta jika API mendukung pagination meta data.
       final educations = await _educationService.fetchAllEducations();
       return educations.length;
     } catch (e) {
@@ -68,7 +72,7 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => _selectedIndex = index);
 
     if (index == 0) {
-      // Halaman dashboard admin
+      Navigator.pushNamed(context, AppRoutes.home);
     } else if (index == 1) {
       Navigator.pushNamed(context, AppRoutes.educationDashboard);
     } else if (index == 2) {
@@ -87,7 +91,8 @@ class _ProfilePageState extends State<ProfilePage> {
           final role = snapshot.data!.role ?? 'user';
           if (role == 'admin') {
             bottomNav = BottomNavV2(
-              selectedIndex: 0,
+              // Asumsi index 0 adalah yang aktif saat di halaman Profile/Dashboard Admin
+              selectedIndex: 0, 
               onItemTapped: _onItemTappedAdmin,
             );
           } else {
@@ -131,6 +136,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
+                      // Card Edukasi
                       FutureBuilder<int>(
                         future: _getEducationCount(),
                         builder: (context, eduSnapshot) {
@@ -145,20 +151,21 @@ class _ProfilePageState extends State<ProfilePage> {
                             count = eduSnapshot.data.toString();
                           }
                           
-                          return GestureDetector(
-                            onTap: () {
+                          // Hapus GestureDetector pembungkus!
+                          return InfoCard(
+                            title: 'EDUKASI',
+                            count: count,
+                            backgroundColor: AppColors.secondary,
+                            // Langsung berikan logic navigasi ke onPressed InfoCard
+                            onPressed: () {
                               Navigator.pushNamed(
                                   context, AppRoutes.educationDashboard);
                             },
-                            child: InfoCard(
-                              title: 'EDUKASI',
-                              count: count,
-                              backgroundColor: AppColors.secondary,
-                              onPressed: () {},
-                            ),
                           );
                         },
                       ),
+                      
+                      // Card Kuis
                       FutureBuilder<int>(
                         future: _getQuizCount(),
                         builder: (context, quizSnapshot) {
@@ -173,17 +180,16 @@ class _ProfilePageState extends State<ProfilePage> {
                             count = quizSnapshot.data.toString();
                           }
                           
-                          return GestureDetector(
-                            onTap: () {
+                          // Hapus GestureDetector pembungkus!
+                          return InfoCard(
+                            title: 'KUIS',
+                            count: count,
+                            backgroundColor: AppColors.tertiary,
+                            // Langsung berikan logic navigasi ke onPressed InfoCard
+                            onPressed: () {
                               Navigator.pushNamed(
                                   context, AppRoutes.quizDashboard);
                             },
-                            child: InfoCard(
-                              title: 'KUIS',
-                              count: count,
-                              backgroundColor: AppColors.tertiary,
-                              onPressed: () {},
-                            ),
                           );
                         },
                       ),
@@ -192,6 +198,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 24),
                 ],
                 
+                // Card "Tentang Kami"
                 GestureDetector(
                   onTap: () {
                     Navigator.pushNamed(context, AppRoutes.about);
@@ -223,10 +230,18 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 const SizedBox(height: 24),
+                
+                // Tombol Keluar
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pushNamed(context, AppRoutes.preview);
-                    _authService.logout();
+                    // Pastikan pushNamed ke AppRoutes.preview dilakukan sebelum logout
+                    // agar riwayat navigasi terhapus sebelum pindah ke halaman login/preview.
+                    _authService.logout(); // Panggil logout service
+                    Navigator.pushNamedAndRemoveUntil(
+                      context, 
+                      AppRoutes.preview, 
+                      (Route<dynamic> route) => false, // Hapus semua route sebelumnya
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
@@ -296,7 +311,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    user.id.toString(),
+                    user.name.toString(),
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,

@@ -19,13 +19,15 @@ class EducationModel {
 
   factory EducationModel.fromJson(Map<String, dynamic> json) {
     return EducationModel(
-      id: json['ID'] as int,
-      name: json['Name'] as String,
-      url: json['Url'] as String,
-      thumbnail: json['Thumbnail'] as String,
-      createdBy: json['CreatedBy'] as int,
-      createdAt: json['CreatedAt'] as String,
-      updatedAt: json['UpdatedAt'] as String,
+      // 💡 Perbaikan: Mengganti PascalCase ke snake_case/lowercase
+      id: json['id'] as int, 
+      name: json['name'] as String,
+      url: json['url'] as String,
+      thumbnail: json['thumbnail'] as String,
+      createdBy: json['created_by'] as int, 
+      // Asumsi key untuk waktu juga menggunakan snake_case
+      createdAt: json['created_at'] as String, 
+      updatedAt: json['updated_at'] as String,
     );
   }
 }
