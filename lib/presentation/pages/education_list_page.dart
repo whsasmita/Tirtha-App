@@ -33,7 +33,8 @@ class _EducationListPageState extends State<EducationListPage> {
   String? _error;
   String _searchQuery = "";
   
-  // RASIO DIPERBAIKI: Menggunakan 0.9 (konsisten dengan HomePage)
+  // PERBAIKAN: Aspect ratio disesuaikan untuk card yang lebih tinggi seperti di HomePage
+  // Ratio lebih kecil = card lebih tinggi
   static const double _cardAspectRatio = 0.75; 
 
   @override
@@ -64,7 +65,6 @@ class _EducationListPageState extends State<EducationListPage> {
   void _onSearchChanged() {
     setState(() {
       _searchQuery = _searchController.text.toLowerCase();
-      // Filtrasi dilakukan pada _allEducations yang sudah dimuat
       if (_searchQuery.isEmpty) {
         _filteredEducations = _allEducations;
       } else {
@@ -124,7 +124,6 @@ class _EducationListPageState extends State<EducationListPage> {
         setState(() {
           _currentPage++;
           _allEducations.addAll(response.data);
-          // Apply filter to new combined list
           _filteredEducations = _searchQuery.isEmpty 
               ? _allEducations 
               : _allEducations
@@ -318,7 +317,7 @@ class _EducationListPageState extends State<EducationListPage> {
       );
     }
 
-    // GridView yang diperbaiki
+    // PERBAIKAN: GridView dengan aspect ratio yang sama dengan HomePage
     return GridView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(16.0),
@@ -326,7 +325,8 @@ class _EducationListPageState extends State<EducationListPage> {
         crossAxisCount: 2,
         crossAxisSpacing: 16.0,
         mainAxisSpacing: 16.0,
-        // Menggunakan rasio 0.9. Jika rasio ini < 1, item akan lebih tinggi daripada lebar (yang memecahkan masalah overflow).
+        // Menggunakan childAspectRatio 1.4 (sama dengan HomePage: width / height = 1.4)
+        // Ini berarti card lebih lebar daripada tinggi, mencegah overflow
         childAspectRatio: _cardAspectRatio, 
       ),
       itemCount: _filteredEducations.length + (_isLoadingMore ? 1 : 0),

@@ -32,6 +32,9 @@ class _QuizListPageState extends State<QuizListPage> {
   bool _hasMore = true;
   String? _error;
   String _searchQuery = "";
+  
+  // PERBAIKAN: Aspect ratio disesuaikan untuk card yang lebih tinggi seperti di HomePage
+  static const double _cardAspectRatio = 0.75;
 
   @override
   void initState() {
@@ -317,7 +320,7 @@ class _QuizListPageState extends State<QuizListPage> {
         crossAxisCount: 2,
         crossAxisSpacing: 16.0,
         mainAxisSpacing: 16.0,
-        childAspectRatio: 1.4,
+        childAspectRatio: _cardAspectRatio,
       ),
       itemCount: _filteredQuizzes.length + (_isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
@@ -334,6 +337,7 @@ class _QuizListPageState extends State<QuizListPage> {
         return GridItemCard(
           title: item.name,
           imageUrl: 'assets/quiz.jpg',
+          aspectRatio: _cardAspectRatio,
           onTap: () => _launchURL(item.url),
         );
       },

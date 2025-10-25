@@ -101,6 +101,7 @@ flutter:
     - assets/virus.png
     - assets/gelas_blimbing.png
     - assets/default-avatar.png
+    - assets/default-placeholder.jpg
     - assets/about_me.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see

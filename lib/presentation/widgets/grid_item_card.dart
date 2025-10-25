@@ -5,14 +5,14 @@ class GridItemCard extends StatelessWidget {
   final String imageUrl;
   final String title;
   final VoidCallback? onTap;
-  final double aspectRatio; 
+  final double aspectRatio;
 
   const GridItemCard({
     Key? key,
     required this.imageUrl,
     required this.title,
     this.onTap,
-    this.aspectRatio = 0.75, // Menggunakan rasio 0.9 yang sudah diperbaiki
+    this.aspectRatio = 0.75, // Default disesuaikan untuk card lebih tinggi
   }) : super(key: key);
 
   bool get _isNetworkImage => imageUrl.startsWith('http') || imageUrl.startsWith('https');
@@ -33,21 +33,16 @@ class GridItemCard extends StatelessWidget {
             ),
           ],
         ),
-        // Column dibatasi oleh tinggi GridView
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          // Menggunakan MainAxisSize.min memastikan Column tidak mengambil ruang vertikal lebih dari yang dibutuhkan.
-          // Meskipun di GridView, batasan ini sudah dipaksakan dari luar, penggunaan ini adalah praktik yang baik.
-          mainAxisSize: MainAxisSize.min, 
           children: [
-            // 3. Header Gambar dengan AspectRatio
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(10),
-                topRight: Radius.circular(10),
-              ),
-              child: AspectRatio(
-                aspectRatio: aspectRatio, // Menerapkan rasio dari luar
+            // Gambar dengan AspectRatio
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(10),
+                  topRight: Radius.circular(10),
+                ),
                 child: _isNetworkImage
                     ? Image.network(
                         imageUrl,
@@ -76,26 +71,27 @@ class GridItemCard extends StatelessWidget {
               ),
             ),
             
-            // Teks Judul
-            // Padding dan Text ini kemungkinan yang menyebabkan overflow jika terlalu tinggi.
-            Padding(
+            // Container untuk text dengan batasan tinggi
+            Container(
               padding: const EdgeInsets.all(8.0),
-              child: Text(
-                title,
-                textAlign: TextAlign.start,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textPrimary,
-                  // Teks ini memiliki batasan 2 baris
+              constraints: const BoxConstraints(
+                minHeight: 40, // Tinggi minimum untuk text
+                maxHeight: 50, // Batasi tinggi maksimum
+              ),
+              child: Center(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
-            
-            // HAPUS SizedBox(height: 4) yang berisiko menyebabkan overflow
-            // const SizedBox(height: 4), 
           ],
         ),
       ),
