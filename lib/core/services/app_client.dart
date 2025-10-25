@@ -82,7 +82,6 @@ class ApiClient {
   
   static Future<void> saveToken(String token) async {
     await _storage.write(key: 'auth_token', value: token);
-    print('✅ Token saved');
   }
 
   static Future<String?> getToken() async {
@@ -91,6 +90,5 @@ class ApiClient {
   
   static Future<void> deleteToken() async {
     await _storage.delete(key: 'auth_token');
-    print('🗑️ Token deleted');
   }
 }
