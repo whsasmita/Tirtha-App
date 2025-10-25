@@ -272,16 +272,16 @@ class _HemodialysisMonitoringPageState
                   _buildModernHeaderCell(
                     'Tekanan Darah',
                     width: colWidth * 2,
-                    height: 30,
-                    icon: Icons.favorite,
+                    height: 58, // Dari 30 → 50
+                    // icon: Icons.favorite,
                     subtitle: 'MMHG',
                   ),
                   _buildModernHeaderCell(
                     'Berat Badan',
                     width: colWidth * 2,
-                    height: 30,
+                    height: 58, // Dari 30 → 50
                     isLast: true,
-                    icon: Icons.monitor_weight,
+                    // icon: Icons.monitor_weight,
                     subtitle: 'KG',
                   ),
                 ],
@@ -297,7 +297,11 @@ class _HemodialysisMonitoringPageState
                   _buildSubHeaderCell('Sebelum HD', width: colWidth),
                   _buildSubHeaderCell('Setelah HD', width: colWidth),
                   _buildSubHeaderCell('Sebelum HD', width: colWidth),
-                  _buildSubHeaderCell('Setelah HD', width: colWidth, isLast: true),
+                  _buildSubHeaderCell(
+                    'Setelah HD',
+                    width: colWidth,
+                    isLast: true,
+                  ),
                 ],
               ),
             ),
@@ -327,35 +331,42 @@ class _HemodialysisMonitoringPageState
       height: rowspan ? 90 : height,
       decoration: BoxDecoration(
         border: Border(
-          right: isLast
-              ? BorderSide.none
-              : BorderSide(color: Colors.white.withOpacity(0.3), width: 1),
+          right:
+              isLast
+                  ? BorderSide.none
+                  : BorderSide(color: Colors.white.withOpacity(0.3), width: 1),
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 6,
+      ), // Kurangi padding
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min, // TAMBAHKAN INI
         children: [
           if (icon != null) ...[
-            Icon(icon, color: Colors.white, size: 20),
-            const SizedBox(height: 4),
+            Icon(icon, color: Colors.white, size: 16), // Dari 20 → 16
+            const SizedBox(height: 2), // Dari 4 → 2
           ],
           Text(
             text,
             style: const TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 13,
+              fontSize: 15, // Dari 13 → 11
               color: Colors.white,
-              height: 1.2,
+              height: 1.1, // Dari 1.2 → 1.1
             ),
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.visible,
           ),
           if (subtitle != null) ...[
-            const SizedBox(height: 2),
+            const SizedBox(height: 1), // Dari 2 → 1
             Text(
               subtitle,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 15, // Dari 10 → 9
                 color: Colors.white.withOpacity(0.9),
                 fontWeight: FontWeight.w500,
               ),
@@ -377,9 +388,10 @@ class _HemodialysisMonitoringPageState
       height: 40,
       decoration: BoxDecoration(
         border: Border(
-          right: isLast
-              ? BorderSide.none
-              : BorderSide(color: Colors.grey[300]!, width: 1),
+          right:
+              isLast
+                  ? BorderSide.none
+                  : BorderSide(color: Colors.grey[300]!, width: 1),
           bottom: BorderSide(color: Colors.grey[300]!, width: 1),
         ),
       ),
@@ -416,7 +428,11 @@ class _HemodialysisMonitoringPageState
           _buildModernDataCell(item.bpBefore, width: colWidth),
           _buildModernDataCell(item.bpAfter, width: colWidth),
           _buildModernDataCell('${item.weightBefore}', width: colWidth),
-          _buildModernDataCell('${item.weightAfter}', width: colWidth, isLast: true),
+          _buildModernDataCell(
+            '${item.weightAfter}',
+            width: colWidth,
+            isLast: true,
+          ),
         ],
       ),
     );
@@ -432,9 +448,10 @@ class _HemodialysisMonitoringPageState
       width: width,
       decoration: BoxDecoration(
         border: Border(
-          right: isLast
-              ? BorderSide.none
-              : BorderSide(color: Colors.grey[200]!, width: 1),
+          right:
+              isLast
+                  ? BorderSide.none
+                  : BorderSide(color: Colors.grey[200]!, width: 1),
           bottom: BorderSide(color: Colors.grey[200]!, width: 1),
         ),
       ),
