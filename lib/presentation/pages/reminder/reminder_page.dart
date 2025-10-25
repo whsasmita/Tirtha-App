@@ -572,6 +572,69 @@ class _ReminderPageState extends State<ReminderPage> {
     }
   }
 
+  void _showSuccessDialog(BuildContext context, String title, String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.green,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(message, style: const TextStyle(fontSize: 14)),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context); // Tutup dialog sukses
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+              child: const Text(
+                'OK',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _deleteReminder(int index) async {
     final reminder = _filteredReminders[index];
 
@@ -615,6 +678,7 @@ class _ReminderPageState extends State<ReminderPage> {
     if (confirmed != true || !mounted) return;
 
     try {
+      // Tampilkan Loading Dialog
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -625,6 +689,7 @@ class _ReminderPageState extends State<ReminderPage> {
             ),
       );
 
+      // Proses Penghapusan
       if (reminder.type == 'drug') {
         await _drugScheduleService.deleteDrugSchedule(reminder.id.toString());
       } else if (reminder.type == 'control') {
@@ -635,32 +700,37 @@ class _ReminderPageState extends State<ReminderPage> {
         );
       }
 
+      // Tutup Loading Dialog
       if (mounted) {
         Navigator.of(context).pop();
       }
 
+      // Ambil data terbaru
       await _fetchAllReminders();
 
+      // TAMPILKAN POP UP SUKSES
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Pengingat "${reminder.title}" berhasil dihapus'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
+        _showSuccessDialog(
+          context,
+          'Berhasil',
+          'Pengingat "${reminder.title}" berhasil dihapus!',
         );
       }
     } catch (e) {
       print('❌ Error deleting reminder: $e');
 
+      // Tutup Loading Dialog
       if (mounted) {
         Navigator.of(context).pop();
       }
 
+      // Tampilkan SnackBar error (SnackBar lebih cocok untuk error)
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal menghapus pengingat: ${e.toString()}'),
+            content: Text(
+              'Gagal menghapus pengingat: ${e.toString().replaceFirst('Exception: ', '')}',
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
