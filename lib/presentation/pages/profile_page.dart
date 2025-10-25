@@ -946,17 +946,11 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     } else if (snapshot.hasData) {
       final user = snapshot.data!;
-      
+
       // Tentukan image provider untuk foto profil
-      ImageProvider profileImage;
-      if (user.profilePicture != null && user.profilePicture!.isNotEmpty) {
-        // Jika ada foto profil dari server, gunakan NetworkImage
-        profileImage = NetworkImage(user.profilePicture!);
-      } else {
-        // Jika tidak ada, gunakan default avatar
-        profileImage = const AssetImage('assets/default-avatar.png');
-      }
-      
+      final hasProfilePicture =
+          user.profilePicture != null && user.profilePicture!.isNotEmpty;
+
       return Column(
         children: [
           const Text(
@@ -974,26 +968,37 @@ class _ProfilePageState extends State<ProfilePage> {
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 2,
-                  ),
+                  border: Border.all(color: Colors.white, width: 2),
                 ),
                 child: CircleAvatar(
                   radius: 40,
-                  backgroundColor: Colors.grey[200],
-                  backgroundImage: profileImage,
-                  onBackgroundImageError: (exception, stackTrace) {
-                    // Jika error load gambar, tidak perlu action
-                    print('Error loading profile picture: $exception');
-                  },
-                  child: user.profilePicture == null || user.profilePicture!.isEmpty
-                      ? Icon(
-                          Icons.person,
-                          size: 40,
-                          color: Colors.grey[400],
-                        )
-                      : null,
+                  backgroundColor:
+                      Colors.white, // Ubah dari Colors.grey[200]
+                  child: ClipOval(
+                    child:
+                        hasProfilePicture
+                            ? Image.network(
+                              user.profilePicture!,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                // Jika error load gambar, tampilkan default avatar
+                                return Image.asset(
+                                  'assets/default-avatar.png',
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                );
+                              },
+                            )
+                            : Image.asset(
+                              'assets/default-avatar.png',
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                            ),
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -1012,17 +1017,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    // const SizedBox(height: 4),
-                    // // Role
-                    // Text(
-                    //   user.role ?? "Role tidak tersedia",
-                    //   style: const TextStyle(
-                    //     fontSize: 14,
-                    //     color: Colors.white70,
-                    //   ),
-                    //   maxLines: 1,
-                    //   overflow: TextOverflow.ellipsis,
-                    // ),
                     const SizedBox(height: 8),
                     // Tombol Edit Profil
                     SizedBox(
@@ -1034,16 +1028,17 @@ class _ProfilePageState extends State<ProfilePage> {
                             final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => EditProfilePage(
-                                  user: snapshot.data!,
-                                ),
+                                builder:
+                                    (context) =>
+                                        EditProfilePage(user: snapshot.data!),
                               ),
                             );
 
                             // Refresh profile jika berhasil update
                             if (result == true && mounted) {
                               setState(() {
-                                _getUserProfile = _profileService.getUserProfile();
+                                _getUserProfile =
+                                    _profileService.getUserProfile();
                               });
                             }
                           }
@@ -1057,10 +1052,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         child: const Text(
                           'Edit Profil',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
+                          style: TextStyle(color: Colors.white, fontSize: 12),
                         ),
                       ),
                     ),
