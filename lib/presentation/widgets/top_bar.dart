@@ -132,22 +132,6 @@ class _TopBarState extends State<TopBar> {
                 fit: BoxFit.contain,
               ),
             ),
-            
-      // =======================================================
-      // Bagian TITLE: Hanya tampilkan nama jika user adalah ADMIN
-      // =======================================================
-      title: isAdmin 
-          ? Text(
-              userName, // Tampilkan Nama Pengguna (Admin)
-              style: const TextStyle(
-                color: Colors.black,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-              overflow: TextOverflow.ellipsis, // Penanganan overflow teks
-              maxLines: 1,
-            )
-          : null, // Title dihilangkan (null) untuk user biasa
       
       // Menggunakan titleTextStyle untuk menyesuaikan gaya title saat tidak null
       titleTextStyle: const TextStyle(

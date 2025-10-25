@@ -101,9 +101,9 @@ class _AppMenuDialogState extends State<AppMenuDialog> {
                     children: [
                       const Icon(Icons.error_outline, color: Colors.red, size: 48),
                       const SizedBox(height: 16),
-                      Text(
+                      const Text(
                         'Gagal memuat profil',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.red,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -122,6 +122,14 @@ class _AppMenuDialogState extends State<AppMenuDialog> {
             } else if (snapshot.hasData) {
               final user = snapshot.data!;
               final role = user.role ?? 'user';
+
+              // Tentukan image provider untuk foto profil
+              ImageProvider profileImage;
+              if (user.profilePicture != null && user.profilePicture!.isNotEmpty) {
+                profileImage = NetworkImage(user.profilePicture!);
+              } else {
+                profileImage = const AssetImage('assets/default-avatar.png');
+              }
 
               return Column(
                 children: [
@@ -142,50 +150,85 @@ class _AppMenuDialogState extends State<AppMenuDialog> {
                       children: [
                         Row(
                           children: [
-                            CircleAvatar(
-                              radius: 32,
-                              backgroundImage: const AssetImage('assets/doctor.png'),
-                              backgroundColor: Colors.grey.shade200,
+                            // Profile Picture dengan border
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.primary.withOpacity(0.3),
+                                  width: 2,
+                                ),
+                              ),
+                              child: CircleAvatar(
+                                radius: 32,
+                                backgroundColor: Colors.grey.shade200,
+                                backgroundImage: profileImage,
+                                onBackgroundImageError: (exception, stackTrace) {
+                                  print('Error loading profile picture: $exception');
+                                },
+                                child: user.profilePicture == null || user.profilePicture!.isEmpty
+                                    ? Icon(
+                                        Icons.person,
+                                        size: 32,
+                                        color: Colors.grey[400],
+                                      )
+                                    : null,
+                              ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  // Nama dengan overflow handling
                                   Text(
-                                    user.name ?? 'Admin User',
+                                    user.name ?? 'Nama tidak tersedia',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 17,
                                       color: AppColors.textPrimary,
+                                      decoration: TextDecoration.none,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3,
+                                  // Email dengan overflow handling
+                                  Text(
+                                    user.email ?? 'Email tidak tersedia',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      decoration: TextDecoration.none,
+                                      fontSize: 12,
                                     ),
-                                    decoration: BoxDecoration(
-                                      color: role == 'admin'
-                                          ? AppColors.primary.withOpacity(0.2)
-                                          : Colors.grey.shade200,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      role.toUpperCase(),
-                                      style: TextStyle(
-                                        color: role == 'admin'
-                                            ? AppColors.primary
-                                            : Colors.grey.shade700,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
+                                  // const SizedBox(height: 6),
+                                  // // Role badge
+                                  // Container(
+                                  //   padding: const EdgeInsets.symmetric(
+                                  //     horizontal: 8,
+                                  //     vertical: 3,
+                                  //   ),
+                                  //   decoration: BoxDecoration(
+                                  //     color: role == 'admin'
+                                  //         ? AppColors.primary.withOpacity(0.2)
+                                  //         : Colors.grey.shade200,
+                                  //     borderRadius: BorderRadius.circular(12),
+                                  //   ),
+                                  //   child: Text(
+                                  //     role.toUpperCase(),
+                                  //     style: TextStyle(
+                                  //       color: role == 'admin'
+                                  //           ? AppColors.primary
+                                  //           : Colors.grey.shade700,
+                                  //       fontSize: 11,
+                                  //       fontWeight: FontWeight.bold,
+                                  //       letterSpacing: 0.5,
+                                  //     ),
+                                  //   ),
+                                  // ),
                                 ],
                               ),
                             ),
@@ -219,6 +262,7 @@ class _AppMenuDialogState extends State<AppMenuDialog> {
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.grey,
+                                  decoration: TextDecoration.none,
                                   letterSpacing: 1,
                                 ),
                               ),
@@ -269,9 +313,9 @@ class _AppMenuDialogState extends State<AppMenuDialog> {
                           ),
                           elevation: 0,
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
+                          children: [
                             Icon(Icons.logout, size: 20),
                             SizedBox(width: 8),
                             Text(
