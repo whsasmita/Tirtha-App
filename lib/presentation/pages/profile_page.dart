@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tirtha_app/presentation/pages/edit_profile_page.dart';
 import 'package:tirtha_app/presentation/themes/color.dart';
 import 'package:tirtha_app/presentation/widgets/bottom_nav_v1.dart';
 import 'package:tirtha_app/presentation/widgets/bottom_nav_v2.dart';
@@ -18,7 +19,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  int _selectedIndex = 3; // Profile ada di index 3
+  int _selectedIndex = 3;
   final AuthService _authService = AuthService();
   final AuthService _profileService = AuthService();
   final EducationService _educationService = EducationService();
@@ -28,11 +29,10 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<int>? _educationCount;
   Future<int>? _quizCount;
 
-  // Controllers untuk ganti password
-  final TextEditingController _oldPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
-  bool _isOldPasswordVisible = false;
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
   bool _isNewPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
@@ -44,7 +44,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   void dispose() {
-    _oldPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -82,14 +81,289 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  // Dialog validasi error
+  void _showValidationDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.error_outline,
+                  color: Colors.red,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(message, style: const TextStyle(fontSize: 14)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+              child: const Text(
+                'OK',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Dialog konfirmasi
+  void _showConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.help_outline,
+                  color: Colors.orange,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Konfirmasi',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Apakah Anda yakin ingin mengubah kata sandi?',
+            style: TextStyle(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(foregroundColor: Colors.grey),
+              child: const Text('Batal', style: TextStyle(fontSize: 16)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context); // Tutup dialog konfirmasi
+                _processChangePassword(); // Proses ganti password
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+              child: const Text(
+                'Ya, Ubah',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Dialog sukses
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.green,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Berhasil',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Text(message, style: const TextStyle(fontSize: 14)),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context); // Tutup dialog sukses
+                Navigator.pop(context); // Tutup dialog ganti password
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+              child: const Text(
+                'OK',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Dialog error
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.error_outline,
+                  color: Colors.red,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Gagal',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Text(message, style: const TextStyle(fontSize: 14)),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+              child: const Text(
+                'OK',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Dialog loading
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: AppColors.primary),
+                const SizedBox(height: 16),
+                const Text(
+                  'Sedang memperbarui kata sandi...',
+                  style: TextStyle(fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _showChangePasswordDialog() {
-    // Reset controllers dan visibility
-    _oldPasswordController.clear();
     _newPasswordController.clear();
     _confirmPasswordController.clear();
-    _isOldPasswordVisible = false;
-    _isNewPasswordVisible = false;
-    _isConfirmPasswordVisible = false;
+    setState(() {
+      _isNewPasswordVisible = false;
+      _isConfirmPasswordVisible = false;
+    });
 
     showDialog(
       context: context,
@@ -139,8 +413,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    
-                    // Password Baru
+
                     TextField(
                       controller: _newPasswordController,
                       obscureText: !_isNewPasswordVisible,
@@ -164,13 +437,15 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: AppColors.primary, width: 2),
+                          borderSide: BorderSide(
+                            color: AppColors.primary,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
-                    // Konfirmasi Password Baru
+
                     TextField(
                       controller: _confirmPasswordController,
                       obscureText: !_isConfirmPasswordVisible,
@@ -185,7 +460,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           onPressed: () {
                             setDialogState(() {
-                              _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                              _isConfirmPasswordVisible =
+                                  !_isConfirmPasswordVisible;
                             });
                           },
                         ),
@@ -194,13 +470,15 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: AppColors.primary, width: 2),
+                          borderSide: BorderSide(
+                            color: AppColors.primary,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
-                    // Tombol Simpan
+
                     ElevatedButton(
                       onPressed: () {
                         _handleChangePassword();
@@ -214,7 +492,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         elevation: 0,
                       ),
                       child: const Text(
-                        'Simpan Kata Sandi ',
+                        'Simpan Kata Sandi',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -233,59 +511,62 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _handleChangePassword() {
-    if (_newPasswordController.text.isEmpty) {
-      _showSnackBar('Kata sandi baru harus diisi', isError: true);
-      return;
-    }
-    if (_newPasswordController.text.length < 6) {
-      _showSnackBar('Kata sandi baru minimal 6 karakter', isError: true);
-      return;
-    }
-    if (_newPasswordController.text != _confirmPasswordController.text) {
-      _showSnackBar('Konfirmasi kata sandi tidak cocok', isError: true);
+    final newPassword = _newPasswordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    // Validasi Input Kosong
+    if (newPassword.isEmpty || confirmPassword.isEmpty) {
+      _showValidationDialog(
+        'Kolom Kosong',
+        'Kata sandi baru dan konfirmasi harus diisi.',
+      );
       return;
     }
 
-    // TODO: Implementasi API call untuk ganti password
-    // Contoh:
-    // _authService.changePassword(
-    //   oldPassword: _oldPasswordController.text,
-    //   newPassword: _newPasswordController.text,
-    // ).then((success) {
-    //   if (success) {
-    //     Navigator.pop(context);
-    //     _showSnackBar('Kata sandi berhasil diubah', isError: false);
-    //   } else {
-    //     _showSnackBar('Kata sandi lama salah', isError: true);
-    //   }
-    // });
+    // Validasi Panjang Password
+    if (newPassword.length < 6) {
+      _showValidationDialog(
+        'Password Terlalu Pendek',
+        'Kata sandi baru minimal 6 karakter.',
+      );
+      return;
+    }
 
-    // Sementara simulasi berhasil
-    Navigator.pop(context);
-    _showSnackBar('Kata Sandi berhasil diubah', isError: false);
+    // Validasi Konfirmasi Password
+    if (newPassword != confirmPassword) {
+      _showValidationDialog(
+        'Password Tidak Cocok',
+        'Konfirmasi kata sandi tidak cocok dengan kata sandi baru.',
+      );
+      return;
+    }
+
+    // Tampilkan dialog konfirmasi
+    _showConfirmationDialog();
   }
 
-  void _showSnackBar(String message, {required bool isError}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              isError ? Icons.error_outline : Icons.check_circle_outline,
-              color: Colors.white,
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: isError ? Colors.red : Colors.green,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
+  void _processChangePassword() async {
+    final newPassword = _newPasswordController.text;
+
+    // Tampilkan loading dialog
+    _showLoadingDialog();
+
+    try {
+      await _authService.updatePassword(newPassword);
+
+      // Tutup loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Tampilkan dialog sukses
+      _showSuccessDialog('Kata sandi Anda berhasil diubah! 🎉');
+    } catch (e) {
+      // Tutup loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Tampilkan dialog error
+      String errorMessage = e.toString().replaceFirst('Exception: ', '');
+      _showErrorDialog(errorMessage);
+    }
   }
 
   @override
@@ -293,7 +574,6 @@ class _ProfilePageState extends State<ProfilePage> {
     return FutureBuilder<UserModel>(
       future: _getUserProfile,
       builder: (context, snapshot) {
-        // Selalu gunakan BottomNavV1 untuk halaman profile
         Widget bottomNav = const SizedBox.shrink();
 
         if (snapshot.hasData) {
@@ -323,14 +603,16 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: _buildProfileHeader(snapshot),
                 ),
                 const SizedBox(height: 24),
-                
-                // Dashboard hanya untuk admin
+
                 if (snapshot.hasData && snapshot.data!.role == 'admin') ...[
                   const Center(
                     child: Text(
                       'Dashboard',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -341,35 +623,40 @@ class _ProfilePageState extends State<ProfilePage> {
                         future: _getEducationCount(),
                         builder: (context, eduSnapshot) {
                           String count = '0';
-                          
-                          if (eduSnapshot.connectionState == ConnectionState.waiting) {
+
+                          if (eduSnapshot.connectionState ==
+                              ConnectionState.waiting) {
                             count = '...';
                           } else if (eduSnapshot.hasError) {
                             count = '0';
-                            print('Error education count: ${eduSnapshot.error}');
+                            print(
+                              'Error education count: ${eduSnapshot.error}',
+                            );
                           } else if (eduSnapshot.hasData) {
                             count = eduSnapshot.data.toString();
                           }
-                          
+
                           return InfoCard(
                             title: 'EDUKASI',
                             count: count,
                             backgroundColor: AppColors.secondary,
                             onPressed: () {
-                              // Langsung ke dashboard (akan pakai BottomNavV2 di page educationDashboard)
                               Navigator.pushNamed(
-                                  context, AppRoutes.educationDashboard);
+                                context,
+                                AppRoutes.educationDashboard,
+                              );
                             },
                           );
                         },
                       ),
-                      
+
                       FutureBuilder<int>(
                         future: _getQuizCount(),
                         builder: (context, quizSnapshot) {
                           String count = '0';
-                          
-                          if (quizSnapshot.connectionState == ConnectionState.waiting) {
+
+                          if (quizSnapshot.connectionState ==
+                              ConnectionState.waiting) {
                             count = '...';
                           } else if (quizSnapshot.hasError) {
                             count = '0';
@@ -377,15 +664,16 @@ class _ProfilePageState extends State<ProfilePage> {
                           } else if (quizSnapshot.hasData) {
                             count = quizSnapshot.data.toString();
                           }
-                          
+
                           return InfoCard(
                             title: 'KUIS',
                             count: count,
                             backgroundColor: AppColors.tertiary,
                             onPressed: () {
-                              // Langsung ke dashboard (akan pakai BottomNavV2 di page quizDashboard)
                               Navigator.pushNamed(
-                                  context, AppRoutes.quizDashboard);
+                                context,
+                                AppRoutes.quizDashboard,
+                              );
                             },
                           );
                         },
@@ -394,8 +682,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 24),
                 ],
-                
-                // Card Informasi Akun
+
                 if (snapshot.hasData) ...[
                   Container(
                     padding: const EdgeInsets.all(20.0),
@@ -421,8 +708,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                         const Divider(height: 24),
-                        
-                        // Nomor Telepon
+
                         _buildInfoRow(
                           icon: Icons.phone_outlined,
                           iconColor: AppColors.primary,
@@ -430,8 +716,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           value: snapshot.data!.phone_number ?? '-',
                         ),
                         const SizedBox(height: 16),
-                        
-                        // Email
+
                         _buildInfoRow(
                           icon: Icons.email_outlined,
                           iconColor: AppColors.secondary,
@@ -439,8 +724,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           value: snapshot.data!.email ?? '-',
                         ),
                         const SizedBox(height: 16),
-                        
-                        // Password dengan tombol ganti
+
                         Row(
                           children: [
                             Container(
@@ -504,8 +788,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 24),
                 ],
-                
-                // Card "Tentang Kami"
+
                 GestureDetector(
                   onTap: () {
                     Navigator.pushNamed(context, AppRoutes.about);
@@ -560,17 +843,13 @@ class _ProfilePageState extends State<ProfilePage> {
                             ],
                           ),
                         ),
-                        Icon(
-                          Icons.chevron_right,
-                          color: Colors.grey[400],
-                        ),
+                        Icon(Icons.chevron_right, color: Colors.grey[400]),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
-                
-                // Tombol Keluar
+
                 ElevatedButton(
                   onPressed: () {
                     _authService.logout();
@@ -627,11 +906,7 @@ class _ProfilePageState extends State<ProfilePage> {
             color: iconColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
-            icon,
-            color: iconColor,
-            size: 20,
-          ),
+          child: Icon(icon, color: iconColor, size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -640,10 +915,7 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
               const SizedBox(height: 4),
               Text(
@@ -663,7 +935,8 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildProfileHeader(AsyncSnapshot<UserModel> snapshot) {
     if (snapshot.connectionState == ConnectionState.waiting) {
       return const Center(
-          child: CircularProgressIndicator(color: Colors.white));
+        child: CircularProgressIndicator(color: Colors.white),
+      );
     } else if (snapshot.hasError) {
       return Center(
         child: Text(
@@ -673,6 +946,17 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     } else if (snapshot.hasData) {
       final user = snapshot.data!;
+      
+      // Tentukan image provider untuk foto profil
+      ImageProvider profileImage;
+      if (user.profilePicture != null && user.profilePicture!.isNotEmpty) {
+        // Jika ada foto profil dari server, gunakan NetworkImage
+        profileImage = NetworkImage(user.profilePicture!);
+      } else {
+        // Jika tidak ada, gunakan default avatar
+        profileImage = const AssetImage('assets/default-avatar.png');
+      }
+      
       return Column(
         children: [
           const Text(
@@ -686,52 +970,102 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 16),
           Row(
             children: [
-              const CircleAvatar(
-                radius: 40,
-                backgroundColor: Colors.white,
-                backgroundImage: AssetImage('assets/default-avatar.png'),
+              // Profile Picture dengan border
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 2,
+                  ),
+                ),
+                child: CircleAvatar(
+                  radius: 40,
+                  backgroundColor: Colors.grey[200],
+                  backgroundImage: profileImage,
+                  onBackgroundImageError: (exception, stackTrace) {
+                    // Jika error load gambar, tidak perlu action
+                    print('Error loading profile picture: $exception');
+                  },
+                  child: user.profilePicture == null || user.profilePicture!.isEmpty
+                      ? Icon(
+                          Icons.person,
+                          size: 40,
+                          color: Colors.grey[400],
+                        )
+                      : null,
+                ),
               ),
               const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    user.name.toString(),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Text(
-                    user.role ?? "Role tidak tersedia",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.white70,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 30,
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.tertiary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Nama dengan text overflow handling
+                    Text(
+                      user.name ?? 'Nama tidak tersedia',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
-                      child: const Text(
-                        'Edit Profil',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    // const SizedBox(height: 4),
+                    // // Role
+                    // Text(
+                    //   user.role ?? "Role tidak tersedia",
+                    //   style: const TextStyle(
+                    //     fontSize: 14,
+                    //     color: Colors.white70,
+                    //   ),
+                    //   maxLines: 1,
+                    //   overflow: TextOverflow.ellipsis,
+                    // ),
+                    const SizedBox(height: 8),
+                    // Tombol Edit Profil
+                    SizedBox(
+                      height: 30,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          // Pastikan user data ada
+                          if (snapshot.hasData) {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EditProfilePage(
+                                  user: snapshot.data!,
+                                ),
+                              ),
+                            );
+
+                            // Refresh profile jika berhasil update
+                            if (result == true && mounted) {
+                              setState(() {
+                                _getUserProfile = _profileService.getUserProfile();
+                              });
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.tertiary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                        ),
+                        child: const Text(
+                          'Edit Profil',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

@@ -16,11 +16,9 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  // 💡 Tambahkan controller untuk nomor telepon
   final TextEditingController _phoneNumberController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _konfirmasiPasswordController =
-      TextEditingController();
+  final TextEditingController _konfirmasiPasswordController = TextEditingController();
 
   final AuthService _authService = AuthService();
 
@@ -30,41 +28,59 @@ class _RegisterPageState extends State<RegisterPage> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _phoneNumberController.dispose(); // 💡 Jangan lupa dispose controller baru
+    _phoneNumberController.dispose();
     _passwordController.dispose();
     _konfirmasiPasswordController.dispose();
     super.dispose();
   }
 
-  /// Menampilkan dialog error
+  /// Menampilkan dialog error dengan styling yang lebih friendly
   void _showErrorDialog(String message) {
     String title = 'Terjadi Kesalahan';
     IconData icon = Icons.error_outline;
     Color iconColor = Colors.red;
+    Color buttonColor = Colors.red;
 
-    if (message.toLowerCase().contains('password tidak sama') ||
+    // Deteksi jenis error dan sesuaikan UI
+    if (message.toLowerCase().contains('email') && 
+        (message.toLowerCase().contains('sudah terdaftar') || 
+         message.toLowerCase().contains('sudah digunakan') ||
+         message.toLowerCase().contains('duplicate'))) {
+      title = 'Email Sudah Terdaftar';
+      icon = Icons.email_outlined;
+      iconColor = Colors.orange;
+      buttonColor = AppColors.secondary;
+    } else if (message.toLowerCase().contains('nomor telepon') && 
+               message.toLowerCase().contains('sudah terdaftar')) {
+      title = 'Nomor Telepon Sudah Terdaftar';
+      icon = Icons.phone_outlined;
+      iconColor = Colors.orange;
+      buttonColor = AppColors.secondary;
+    } else if (message.toLowerCase().contains('password tidak sama') ||
         message.toLowerCase().contains('konfirmasi password')) {
       title = 'Password Tidak Sama';
       icon = Icons.lock_outline;
+      iconColor = Colors.orange;
+      buttonColor = AppColors.tertiary;
     } else if (message.toLowerCase().contains('tidak lengkap') ||
         message.toLowerCase().contains('tidak boleh kosong') ||
         message.toLowerCase().contains('wajib diisi')) {
       title = 'Input Tidak Lengkap';
       icon = Icons.warning_amber_rounded;
       iconColor = Colors.orange;
-    } else if (message.toLowerCase().contains('email') &&
-        (message.toLowerCase().contains('sudah') ||
-            message.toLowerCase().contains('terdaftar'))) {
-      title = 'Email Sudah Terdaftar';
-      icon = Icons.email_outlined;
+      buttonColor = AppColors.tertiary;
     } else if (message.toLowerCase().contains('password') &&
         message.toLowerCase().contains('minimal')) {
       title = 'Password Terlalu Pendek';
       icon = Icons.lock_outline;
+      iconColor = Colors.orange;
+      buttonColor = AppColors.tertiary;
     } else if (message.toLowerCase().contains('format') &&
         message.toLowerCase().contains('email')) {
       title = 'Format Email Salah';
       icon = Icons.email_outlined;
+      iconColor = Colors.orange;
+      buttonColor = AppColors.tertiary;
     } else if (message.toLowerCase().contains('koneksi') ||
         message.toLowerCase().contains('jaringan')) {
       title = 'Masalah Koneksi';
@@ -72,12 +88,6 @@ class _RegisterPageState extends State<RegisterPage> {
     } else if (message.toLowerCase().contains('server')) {
       title = 'Server Bermasalah';
       icon = Icons.cloud_off;
-    } else if (message.toLowerCase().contains('nomor telepon') || 
-               message.toLowerCase().contains('phone number') ||
-               message.toLowerCase().contains('telepon wajib diisi')) {
-      title = 'Nomor Telepon Wajib Diisi';
-      icon = Icons.phone_android_outlined;
-      iconColor = Colors.orange;
     }
 
     showDialog(
@@ -86,56 +96,80 @@ class _RegisterPageState extends State<RegisterPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(20),
           ),
-          title: Row(
-            children: [
-              Icon(
-                icon,
-                color: iconColor,
-                size: 28,
-              ),
-              const SizedBox(width: 10),
-              Flexible(
-                child: Text(
+          contentPadding: EdgeInsets.zero,
+          content: Container(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icon dengan background circle
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    color: iconColor,
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Title
+                Text(
                   title,
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            ],
-          ),
-          content: Text(
-            message,
-            style: const TextStyle(fontSize: 16),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              style: TextButton.styleFrom(
-                backgroundColor: AppColors.secondary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+                const SizedBox(height: 12),
+                
+                // Message
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.grey[700],
+                    height: 1.4,
+                  ),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 24),
+                
+                // Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: buttonColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Mengerti',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              child: const Text(
-                'OK',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
@@ -149,55 +183,81 @@ class _RegisterPageState extends State<RegisterPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(20),
           ),
-          title: Row(
-            children: [
-              const Icon(
-                Icons.check_circle_outline,
-                color: Colors.green,
-                size: 28,
-              ),
-              const SizedBox(width: 10),
-              const Text(
-                'Registrasi Berhasil',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+          contentPadding: EdgeInsets.zero,
+          content: Container(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Success Icon
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.green,
+                    size: 48,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          content: const Text(
-            'Akun Anda berhasil dibuat. Silakan login untuk melanjutkan.',
-            style: TextStyle(fontSize: 16),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.pushReplacementNamed(context, AppRoutes.login);
-              },
-              style: TextButton.styleFrom(
-                backgroundColor: AppColors.secondary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+                const SizedBox(height: 20),
+                
+                // Title
+                const Text(
+                  'Registrasi Berhasil!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 12),
+                
+                // Message
+                Text(
+                  'Akun Anda berhasil dibuat.\nSilakan login untuk melanjutkan.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.grey[700],
+                    height: 1.4,
+                  ),
                 ),
-              ),
-              child: const Text(
-                'OK',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                const SizedBox(height: 24),
+                
+                // Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.pushReplacementNamed(context, AppRoutes.login);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Lanjut ke Login',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
@@ -209,7 +269,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
     final offsetInHours = offset.inHours;
 
-    // Asumsi default timezone di Indonesia (WIB, WITA, WIT)
     switch (offsetInHours) {
       case 7:
         return 'Asia/Jakarta';
@@ -228,7 +287,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _handleRegister() async {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
-    final phoneNumber = _phoneNumberController.text.trim(); // 💡 Ambil nilai phone number
+    final phoneNumber = _phoneNumberController.text.trim();
     final password = _passwordController.text.trim();
     final konfirmasiPassword = _konfirmasiPasswordController.text.trim();
 
@@ -243,7 +302,6 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    // 💡 Validasi Nomor Telepon
     if (phoneNumber.isEmpty) {
       _showErrorDialog('Nomor telepon wajib diisi.');
       return;
@@ -261,19 +319,19 @@ class _RegisterPageState extends State<RegisterPage> {
 
     // Validasi format email
     if (!email.contains('@') || !email.contains('.')) {
-      _showErrorDialog('Format email tidak valid.');
+      _showErrorDialog('Format email tidak valid. Gunakan format yang benar (contoh: nama@email.com).');
       return;
     }
 
     // Validasi panjang password
     if (password.length < 6) {
-      _showErrorDialog('Password minimal 6 karakter.');
+      _showErrorDialog('Password minimal 6 karakter untuk keamanan akun Anda.');
       return;
     }
 
     // Validasi password match
     if (password != konfirmasiPassword) {
-      _showErrorDialog('Konfirmasi password tidak sama dengan password.');
+      _showErrorDialog('Konfirmasi password tidak sama dengan password yang Anda masukkan.');
       return;
     }
 
@@ -284,16 +342,14 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       final String timezone = _getDeviceTimezone();
       
-      print('Timezone detected: $timezone');
-      print('Phone Number: $phoneNumber'); // Log phone number
+      print('📤 Request: {name: $name, email: $email, password: $password, timezone: $timezone, phone_number: $phoneNumber}');
 
-      // 💡 Panggil register service dengan parameter phoneNumber
       await _authService.register(
         name,
         email,
         password,
         timezone,
-        phoneNumber, // Kirimkan phone number
+        phoneNumber,
       );
 
       if (mounted) {
@@ -364,7 +420,6 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 24),
 
-              // 💡 Input Nomor Telepon
               const Text(
                 'Nomor Telepon',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -377,7 +432,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primary),
               ),
               const SizedBox(height: 24),
-              // --------------------------
 
               const Text(
                 'Password',
@@ -404,7 +458,7 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 24),
 
               AppButton(
-                text: _isLoading ? 'Loading...' : 'DAFTAR',
+                text: _isLoading ? 'Mendaftar...' : 'DAFTAR',
                 onPressed: _isLoading ? () {} : _handleRegister,
               ),
               const SizedBox(height: 16),

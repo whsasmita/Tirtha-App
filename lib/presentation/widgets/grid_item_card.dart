@@ -5,7 +5,6 @@ class GridItemCard extends StatelessWidget {
   final String imageUrl;
   final String title;
   final VoidCallback? onTap;
-  // 1. Tambahkan parameter aspectRatio dengan nilai default
   final double aspectRatio; 
 
   const GridItemCard({
@@ -13,11 +12,9 @@ class GridItemCard extends StatelessWidget {
     required this.imageUrl,
     required this.title,
     this.onTap,
-    // 2. Tambahkan ke constructor
-    this.aspectRatio = 1.4, // Nilai default 1.4 sesuai GridView di EducationListPage
+    this.aspectRatio = 0.75, // Menggunakan rasio 0.9 yang sudah diperbaiki
   }) : super(key: key);
 
-  // Helper untuk menentukan apakah URL adalah URL web atau path asset lokal
   bool get _isNetworkImage => imageUrl.startsWith('http') || imageUrl.startsWith('https');
 
   @override
@@ -36,10 +33,14 @@ class GridItemCard extends StatelessWidget {
             ),
           ],
         ),
+        // Column dibatasi oleh tinggi GridView
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          // Menggunakan MainAxisSize.min memastikan Column tidak mengambil ruang vertikal lebih dari yang dibutuhkan.
+          // Meskipun di GridView, batasan ini sudah dipaksakan dari luar, penggunaan ini adalah praktik yang baik.
+          mainAxisSize: MainAxisSize.min, 
           children: [
-            // 3. Ganti Expanded dengan AspectRatio
+            // 3. Header Gambar dengan AspectRatio
             ClipRRect(
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(10),
@@ -76,6 +77,7 @@ class GridItemCard extends StatelessWidget {
             ),
             
             // Teks Judul
+            // Padding dan Text ini kemungkinan yang menyebabkan overflow jika terlalu tinggi.
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Text(
@@ -85,12 +87,15 @@ class GridItemCard extends StatelessWidget {
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: AppColors.textPrimary,
+                  // Teks ini memiliki batasan 2 baris
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(height: 4),
+            
+            // HAPUS SizedBox(height: 4) yang berisiko menyebabkan overflow
+            // const SizedBox(height: 4), 
           ],
         ),
       ),

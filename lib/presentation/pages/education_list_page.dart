@@ -33,8 +33,8 @@ class _EducationListPageState extends State<EducationListPage> {
   String? _error;
   String _searchQuery = "";
   
-  // Konstanta untuk konsistensi ukuran card
-  static const double _cardAspectRatio = 1.4; 
+  // RASIO DIPERBAIKI: Menggunakan 0.9 (konsisten dengan HomePage)
+  static const double _cardAspectRatio = 0.75; 
 
   @override
   void initState() {
@@ -318,6 +318,7 @@ class _EducationListPageState extends State<EducationListPage> {
       );
     }
 
+    // GridView yang diperbaiki
     return GridView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(16.0),
@@ -325,7 +326,8 @@ class _EducationListPageState extends State<EducationListPage> {
         crossAxisCount: 2,
         crossAxisSpacing: 16.0,
         mainAxisSpacing: 16.0,
-        childAspectRatio: _cardAspectRatio, // Menggunakan rasio 0.75
+        // Menggunakan rasio 0.9. Jika rasio ini < 1, item akan lebih tinggi daripada lebar (yang memecahkan masalah overflow).
+        childAspectRatio: _cardAspectRatio, 
       ),
       itemCount: _filteredEducations.length + (_isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {

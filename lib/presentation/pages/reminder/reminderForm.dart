@@ -20,7 +20,6 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String? selectedCategory;
   String? selectedDate;
-  String? selectedTime;
 
   String drugName = '';
   String dose = '1 Tablet';
@@ -29,7 +28,6 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
   bool at18 = false;
 
   final TextEditingController dateController = TextEditingController();
-  final TextEditingController timeController = TextEditingController();
   final TextEditingController drugNameController = TextEditingController();
   final TextEditingController doseController = TextEditingController(text: '1');
 
@@ -39,24 +37,6 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
 
   bool isEditMode = false;
   int? editId;
-
-  void _safeCloseDialog() {
-    if (mounted) {
-      try {
-        Navigator.of(context, rootNavigator: true).pop();
-      } catch (e) {
-        print('Error closing dialog: $e');
-      }
-    }
-  }
-
-  Future<void> _safeShowDialog(Widget dialog) async {
-    if (!mounted) return;
-    await Future.delayed(const Duration(milliseconds: 100));
-    if (!mounted) return;
-
-    showDialog(context: context, builder: (_) => dialog);
-  }
 
   final List<Map<String, dynamic>> categories = [
     {'value': 'minum_obat', 'label': 'Jadwal Minum Obat', 'icon': Icons.medication},
@@ -86,6 +66,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       editId = data.id;
       drugNameController.text = data.drugName;
 
+      // Extract dose number from string like "1 Tablet"
       final doseMatch = RegExp(r'\d+').firstMatch(data.dose);
       if (doseMatch != null) {
         doseController.text = doseMatch.group(0)!;
@@ -125,7 +106,6 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
   }
 
   void _selectDate() async {
-    // Current date stripped of time components to allow today's date selection but prevent past dates
     final DateTime now = DateTime.now();
     final DateTime today = DateTime(now.year, now.month, now.day);
 
@@ -134,14 +114,13 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         : today;
 
     if (initialDate.isBefore(today)) {
-        initialDate = today;
+      initialDate = today;
     }
-
 
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
-      firstDate: today, // Start date is today (preventing past dates)
+      firstDate: today,
       lastDate: DateTime(2100),
       builder: (context, child) {
         return Theme(
@@ -160,7 +139,6 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       setState(() {
         selectedDate = "${picked.day.toString().padLeft(2, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.year}";
         dateController.text = selectedDate!;
-        // When date changes, we need to re-evaluate which time slots are available
       });
     }
   }
@@ -174,36 +152,28 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
     } catch (e) {
       print('⚠️ Date conversion to DateTime error: $e');
     }
-    return DateTime.now(); // Fallback to now
+    return DateTime.now();
   }
-  
-  // New function to check if a time slot is available
+
   bool _isTimeSlotAvailable(int hour) {
-    if (selectedDate == null) return true; // If no date selected, assume all is fine
+    if (selectedDate == null) return true;
 
     final DateTime now = DateTime.now();
     final DateTime selected = _convertDisplayDateToDateTime(selectedDate!);
     final DateTime today = DateTime(now.year, now.month, now.day);
 
-    // If the selected date is after today, all slots are available
     if (selected.isAfter(today)) {
       return true;
     }
 
-    // If the selected date is today, check the current hour
     if (selected.isAtSameMomentAs(today)) {
       final int currentHour = now.hour;
-      // The hour passed (e.g., hour=6 for 06:00) must be greater than or equal to the current hour
-      // For safety, let's say the time slot is *unavailable* if the current time is past the slot time.
-      // E.g., if it's 10:00, 06:00 is unavailable.
       return currentHour < hour;
     }
 
-    // If the selected date is before today (shouldn't happen due to date picker validation),
-    // but as a fallback, all slots should be unavailable.
     return false;
   }
-  
+
   void _handleReset() {
     showDialog(
       context: context,
@@ -225,12 +195,9 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                 at06 = false;
                 at12 = false;
                 at18 = false;
-                selectedTime = null;
                 drugNameController.clear();
                 doseController.text = '1';
-                timeController.clear();
-                
-                // Reset date to today
+
                 DateTime now = DateTime.now();
                 selectedDate = "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}";
                 dateController.text = selectedDate!;
@@ -284,22 +251,20 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       return;
     }
 
-    // Check if any selected time is now unavailable
     if (selectedDate != null && _convertDisplayDateToDateTime(selectedDate!).isAtSameMomentAs(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day))) {
-        if (at06 && !_isTimeSlotAvailable(6)) {
-             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Jam 06:00 sudah terlewat untuk hari ini. Silakan batalkan pilihan atau ubah tanggal.')));
-            return;
-        }
-        if (at12 && !_isTimeSlotAvailable(12)) {
-             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Jam 12:00 sudah terlewat untuk hari ini. Silakan batalkan pilihan atau ubah tanggal.')));
-            return;
-        }
-        if (at18 && !_isTimeSlotAvailable(18)) {
-             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Jam 18:00 sudah terlewat untuk hari ini. Silakan batalkan pilihan atau ubah tanggal.')));
-            return;
-        }
+      if (at06 && !_isTimeSlotAvailable(6)) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Jam 06:00 sudah terlewat untuk hari ini. Silakan batalkan pilihan atau ubah tanggal.')));
+        return;
+      }
+      if (at12 && !_isTimeSlotAvailable(12)) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Jam 12:00 sudah terlewat untuk hari ini. Silakan batalkan pilihan atau ubah tanggal.')));
+        return;
+      }
+      if (at18 && !_isTimeSlotAvailable(18)) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Jam 18:00 sudah terlewat untuk hari ini. Silakan batalkan pilihan atau ubah tanggal.')));
+        return;
+      }
     }
-
 
     final String apiDateFormat = convertDateFormat(selectedDate ?? dateController.text);
 
@@ -313,56 +278,75 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         at18: at18,
       );
 
-      showDialog(
+      final confirmed = await showDialog<bool>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
+        builder: (context) => AlertDialog(
           title: const Text('Konfirmasi Update'),
           content: Text('Anda akan mengubah jadwal obat "${updateSchedule.drugName}" dengan dosis ${updateSchedule.dose} pada tanggal ${selectedDate}. Lanjutkan?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: () => Navigator.pop(context, false),
               child: const Text('Batal'),
             ),
             TextButton(
-              onPressed: () async {
-                Navigator.pop(dialogContext);
-                showDialog(context: context, barrierDismissible: false, builder: (loadingContext) => const Center(child: CircularProgressIndicator()));
-
-                try {
-                  await _drugScheduleService.updateDrugSchedule(editId.toString(), updateSchedule);
-                  _safeCloseDialog();
-                  await _safeShowDialog(
-                    AlertDialog(
-                      title: const Text('Berhasil 🎉'),
-                      content: Text('Pengingat obat ${updateSchedule.drugName} berhasil diubah.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            if (mounted) Navigator.pop(context, true);
-                          },
-                          child: const Text('OK'),
-                        ),
-                      ],
-                    ),
-                  );
-                } catch (e) {
-                  _safeCloseDialog();
-                  await _safeShowDialog(
-                    AlertDialog(
-                      title: const Text('Gagal 😔'),
-                      content: Text('Gagal mengubah pengingat obat: ${e.toString()}'),
-                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup'))],
-                    ),
-                  );
-                }
-              },
+              onPressed: () => Navigator.pop(context, true),
               style: TextButton.styleFrom(foregroundColor: AppColors.tertiary),
               child: const Text('Update'),
             ),
           ],
         ),
       );
+
+      if (confirmed != true || !mounted) return;
+
+      try {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(child: CircularProgressIndicator()),
+        );
+
+        await _drugScheduleService.updateDrugSchedule(editId.toString(), updateSchedule);
+
+        if (!mounted) return;
+        Navigator.pop(context);
+
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Berhasil'),
+            content: Text('Pengingat obat ${updateSchedule.drugName} berhasil diubah.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  if (mounted) Navigator.pop(context, true);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        Navigator.pop(context);
+
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Gagal 😔'),
+            content: Text('Gagal mengubah pengingat obat: ${e.toString()}'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Tutup'),
+              ),
+            ],
+          ),
+        );
+      }
     } else {
       final CreateDrugScheduleDTO newSchedule = CreateDrugScheduleDTO(
         drugName: drugNameController.text,
@@ -373,59 +357,75 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         at18: at18,
       );
 
-      showDialog(
+      final confirmed = await showDialog<bool>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
+        builder: (context) => AlertDialog(
           title: const Text('Konfirmasi Pembuatan'),
           content: Text('Anda akan membuat jadwal obat "${newSchedule.drugName}" dengan dosis ${newSchedule.dose} pada tanggal ${selectedDate}. Lanjutkan?'),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
             TextButton(
-              onPressed: () async {
-                Navigator.pop(dialogContext);
-                showDialog(context: context, barrierDismissible: false, builder: (loadingContext) => const Center(child: CircularProgressIndicator()));
-
-                try {
-                  final response = await _drugScheduleService.createDrugSchedule(newSchedule);
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  if (!mounted) return;
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Berhasil 🎉'),
-                      content: Text('Pengingat obat ${response.drugName} berhasil dibuat.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            if (mounted) Navigator.pop(context, true);
-                          },
-                          child: const Text('OK'),
-                        ),
-                      ],
-                    ),
-                  );
-                } catch (e) {
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  if (!mounted) return;
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Gagal 😔'),
-                      content: Text('Gagal membuat pengingat obat: ${e.toString()}'),
-                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup'))],
-                    ),
-                  );
-                }
-              },
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
               style: TextButton.styleFrom(foregroundColor: AppColors.tertiary),
               child: const Text('Buat'),
             ),
           ],
         ),
       );
+
+      if (confirmed != true || !mounted) return;
+
+      try {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(child: CircularProgressIndicator()),
+        );
+
+        final response = await _drugScheduleService.createDrugSchedule(newSchedule);
+
+        if (!mounted) return;
+        Navigator.pop(context);
+
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Berhasil'),
+            content: Text('Pengingat obat ${response.drugName} berhasil dibuat.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  if (mounted) Navigator.pop(context, true);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        Navigator.pop(context);
+
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Gagal 😔'),
+            content: Text('Gagal membuat pengingat obat: ${e.toString()}'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Tutup'),
+              ),
+            ],
+          ),
+        );
+      }
     }
   }
 
@@ -440,115 +440,147 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
     if (isEditMode && editId != null) {
       final UpdateControlScheduleDTO updateSchedule = UpdateControlScheduleDTO(controlDate: apiDateFormat);
 
-      showDialog(
+      final confirmed = await showDialog<bool>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
+        builder: (context) => AlertDialog(
           title: const Text('Konfirmasi Update'),
           content: Text('Anda akan mengubah jadwal kontrol pada tanggal $selectedDate. Lanjutkan?'),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
             TextButton(
-              onPressed: () async {
-                Navigator.pop(dialogContext);
-                showDialog(context: context, barrierDismissible: false, builder: (loadingContext) => const Center(child: CircularProgressIndicator()));
-
-                try {
-                  await _controlScheduleService.updateControlSchedule(editId!, updateSchedule);
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  if (!mounted) return;
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Berhasil 🎉'),
-                      content: Text('Jadwal kontrol pada ${selectedDate} berhasil diubah.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            if (mounted) Navigator.pop(context, true);
-                          },
-                          child: const Text('OK'),
-                        ),
-                      ],
-                    ),
-                  );
-                } catch (e) {
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  if (!mounted) return;
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Gagal 😔'),
-                      content: Text('Gagal mengubah jadwal kontrol: ${e.toString()}'),
-                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup'))],
-                    ),
-                  );
-                }
-              },
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
               style: TextButton.styleFrom(foregroundColor: AppColors.tertiary),
               child: const Text('Update'),
             ),
           ],
         ),
       );
+
+      if (confirmed != true || !mounted) return;
+
+      try {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(child: CircularProgressIndicator()),
+        );
+
+        await _controlScheduleService.updateControlSchedule(editId!, updateSchedule);
+
+        if (!mounted) return;
+        Navigator.pop(context);
+
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Berhasil'),
+            content: Text('Jadwal kontrol pada $selectedDate berhasil diubah.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  if (mounted) Navigator.pop(context, true);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        Navigator.pop(context);
+
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Gagal 😔'),
+            content: Text('Gagal mengubah jadwal kontrol: ${e.toString()}'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Tutup'),
+              ),
+            ],
+          ),
+        );
+      }
     } else {
       final CreateControlScheduleDTO newSchedule = CreateControlScheduleDTO(controlDate: apiDateFormat);
 
-      showDialog(
+      final confirmed = await showDialog<bool>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
+        builder: (context) => AlertDialog(
           title: const Text('Konfirmasi Pembuatan'),
           content: Text('Anda akan membuat jadwal kontrol pada tanggal $selectedDate. Lanjutkan?'),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
             TextButton(
-              onPressed: () async {
-                Navigator.pop(dialogContext);
-                showDialog(context: context, barrierDismissible: false, builder: (loadingContext) => const Center(child: CircularProgressIndicator()));
-
-                try {
-                  final response = await _controlScheduleService.createControlSchedule(newSchedule);
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  if (!mounted) return;
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Berhasil 🎉'),
-                      content: Text('Jadwal kontrol pada ${selectedDate} berhasil dibuat.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            if (mounted) Navigator.pop(context, true);
-                          },
-                          child: const Text('OK'),
-                        ),
-                      ],
-                    ),
-                  );
-                } catch (e) {
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  if (!mounted) return;
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Gagal 😔'),
-                      content: Text('Gagal membuat jadwal kontrol: ${e.toString()}'),
-                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup'))],
-                    ),
-                  );
-                }
-              },
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
               style: TextButton.styleFrom(foregroundColor: AppColors.tertiary),
               child: const Text('Buat'),
             ),
           ],
         ),
       );
+
+      if (confirmed != true || !mounted) return;
+
+      try {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(child: CircularProgressIndicator()),
+        );
+
+        await _controlScheduleService.createControlSchedule(newSchedule);
+
+        if (!mounted) return;
+        Navigator.pop(context);
+
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Berhasil'),
+            content: Text('Jadwal kontrol pada $selectedDate berhasil dibuat.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  if (mounted) Navigator.pop(context, true);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        Navigator.pop(context);
+
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Gagal 😔'),
+            content: Text('Gagal membuat jadwal kontrol: ${e.toString()}'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Tutup'),
+              ),
+            ],
+          ),
+        );
+      }
     }
   }
 
@@ -563,115 +595,147 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
     if (isEditMode && editId != null) {
       final UpdateHemodialysisScheduleDTO updateSchedule = UpdateHemodialysisScheduleDTO(scheduleDate: apiDateFormat);
 
-      showDialog(
+      final confirmed = await showDialog<bool>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
+        builder: (context) => AlertDialog(
           title: const Text('Konfirmasi Update'),
           content: Text('Anda akan mengubah jadwal hemodialisis pada tanggal $selectedDate. Lanjutkan?'),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
             TextButton(
-              onPressed: () async {
-                Navigator.pop(dialogContext);
-                showDialog(context: context, barrierDismissible: false, builder: (loadingContext) => const Center(child: CircularProgressIndicator()));
-
-                try {
-                  await _hemodialysisScheduleService.updateHemodialysisSchedule(editId!, updateSchedule);
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  if (!mounted) return;
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Berhasil 🎉'),
-                      content: Text('Jadwal hemodialisis pada ${selectedDate} berhasil diubah.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            if (mounted) Navigator.pop(context, true);
-                          },
-                          child: const Text('OK'),
-                        ),
-                      ],
-                    ),
-                  );
-                } catch (e) {
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  if (!mounted) return;
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Gagal 😔'),
-                      content: Text('Gagal mengubah jadwal hemodialisis: ${e.toString()}'),
-                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup'))],
-                    ),
-                  );
-                }
-              },
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
               style: TextButton.styleFrom(foregroundColor: AppColors.tertiary),
               child: const Text('Update'),
             ),
           ],
         ),
       );
+
+      if (confirmed != true || !mounted) return;
+
+      try {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(child: CircularProgressIndicator()),
+        );
+
+        await _hemodialysisScheduleService.updateHemodialysisSchedule(editId!, updateSchedule);
+
+        if (!mounted) return;
+        Navigator.pop(context);
+
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Berhasil'),
+            content: Text('Jadwal hemodialisis pada $selectedDate berhasil diubah.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  if (mounted) Navigator.pop(context, true);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        Navigator.pop(context);
+
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Gagal 😔'),
+            content: Text('Gagal mengubah jadwal hemodialisis: ${e.toString()}'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Tutup'),
+              ),
+            ],
+          ),
+        );
+      }
     } else {
       final CreateHemodialysisScheduleDTO newSchedule = CreateHemodialysisScheduleDTO(scheduleDate: apiDateFormat);
 
-      showDialog(
+      final confirmed = await showDialog<bool>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
+        builder: (context) => AlertDialog(
           title: const Text('Konfirmasi Pembuatan'),
           content: Text('Anda akan membuat jadwal hemodialisis pada tanggal $selectedDate. Lanjutkan?'),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
             TextButton(
-              onPressed: () async {
-                Navigator.pop(dialogContext);
-                showDialog(context: context, barrierDismissible: false, builder: (loadingContext) => const Center(child: CircularProgressIndicator()));
-
-                try {
-                  final response = await _hemodialysisScheduleService.createHemodialysisSchedule(newSchedule);
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  if (!mounted) return;
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Berhasil 🎉'),
-                      content: Text('Jadwal hemodialisis pada ${selectedDate} berhasil dibuat.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            if (mounted) Navigator.pop(context, true);
-                          },
-                          child: const Text('OK'),
-                        ),
-                      ],
-                    ),
-                  );
-                } catch (e) {
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  if (!mounted) return;
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Gagal 😔'),
-                      content: Text('Gagal membuat jadwal hemodialisis: ${e.toString()}'),
-                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup'))],
-                    ),
-                  );
-                }
-              },
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
               style: TextButton.styleFrom(foregroundColor: AppColors.tertiary),
               child: const Text('Buat'),
             ),
           ],
         ),
       );
+
+      if (confirmed != true || !mounted) return;
+
+      try {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(child: CircularProgressIndicator()),
+        );
+
+        await _hemodialysisScheduleService.createHemodialysisSchedule(newSchedule);
+
+        if (!mounted) return;
+        Navigator.pop(context);
+
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Berhasil'),
+            content: Text('Jadwal hemodialisis pada $selectedDate berhasil dibuat.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  if (mounted) Navigator.pop(context, true);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        Navigator.pop(context);
+
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Gagal 😔'),
+            content: Text('Gagal membuat jadwal hemodialisis: ${e.toString()}'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Tutup'),
+              ),
+            ],
+          ),
+        );
+      }
     }
   }
 
@@ -703,23 +767,22 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                 ),
               );
             }).toList(),
-            onChanged: isEditMode ? null : (value) {
-              setState(() {
-                selectedCategory = value;
-                drugNameController.clear();
-                doseController.text = '1';
-                at06 = false;
-                at12 = false;
-                at18 = false;
-                selectedTime = null;
-                timeController.clear();
-                
-                // Set date to today
-                DateTime now = DateTime.now();
-                selectedDate = "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}";
-                dateController.text = selectedDate!;
-              });
-            },
+            onChanged: isEditMode
+                ? null
+                : (value) {
+                    setState(() {
+                      selectedCategory = value;
+                      drugNameController.clear();
+                      doseController.text = '1';
+                      at06 = false;
+                      at12 = false;
+                      at18 = false;
+
+                      DateTime now = DateTime.now();
+                      selectedDate = "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}";
+                      dateController.text = selectedDate!;
+                    });
+                  },
             validator: (value) {
               if (value == null || value.isEmpty) return 'Kategori wajib dipilih';
               return null;
@@ -731,15 +794,12 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
   }
 
   Widget _buildMinumObatFields() {
-    // Check for today's date and current time availability
     final bool isToday = selectedDate != null && _convertDisplayDateToDateTime(selectedDate!).isAtSameMomentAs(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day));
-    
-    // Determine which time slots are available (i.e., not already passed today)
+
     final bool is06Available = !isToday || _isTimeSlotAvailable(6);
     final bool is12Available = !isToday || _isTimeSlotAvailable(12);
     final bool is18Available = !isToday || _isTimeSlotAvailable(18);
 
-    // If a time slot becomes unavailable, deselect it
     if (!is06Available) at06 = false;
     if (!is12Available) at12 = false;
     if (!is18Available) at18 = false;
@@ -801,24 +861,23 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         const SizedBox(height: 20),
         const Text('Pilih Jam Pengingat', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
-        // Pass availability and update logic
         _buildTimeCheckbox(
-            title: 'Pagi (06:00)',
-            value: at06,
-            onChanged: is06Available ? (v) => setState(() => at06 = v!) : null,
-            isDisabled: !is06Available,
+          title: 'Pagi (06:00)',
+          value: at06,
+          onChanged: is06Available ? (v) => setState(() => at06 = v!) : null,
+          isDisabled: !is06Available,
         ),
         _buildTimeCheckbox(
-            title: 'Siang (12:00)',
-            value: at12,
-            onChanged: is12Available ? (v) => setState(() => at12 = v!) : null,
-            isDisabled: !is12Available,
+          title: 'Siang (12:00)',
+          value: at12,
+          onChanged: is12Available ? (v) => setState(() => at12 = v!) : null,
+          isDisabled: !is12Available,
         ),
         _buildTimeCheckbox(
-            title: 'Sore (18:00)',
-            value: at18,
-            onChanged: is18Available ? (v) => setState(() => at18 = v!) : null,
-            isDisabled: !is18Available,
+          title: 'Sore (18:00)',
+          value: at18,
+          onChanged: is18Available ? (v) => setState(() => at18 = v!) : null,
+          isDisabled: !is18Available,
         ),
       ],
     );
@@ -831,7 +890,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       onChanged: onChanged,
       checkColor: Colors.white,
       activeColor: AppColors.tertiary,
-      tileColor: isDisabled ? Colors.transparent : null, // Not strictly necessary, but can hint at disabled state
+      tileColor: isDisabled ? Colors.transparent : null,
       controlAffinity: ListTileControlAffinity.leading,
       contentPadding: EdgeInsets.zero,
     );
@@ -982,7 +1041,6 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
   @override
   void dispose() {
     dateController.dispose();
-    timeController.dispose();
     drugNameController.dispose();
     doseController.dispose();
     super.dispose();

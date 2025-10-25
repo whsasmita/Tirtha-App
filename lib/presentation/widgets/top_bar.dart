@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tirtha_app/presentation/widgets/app_menu_dialog.dart';
 import 'package:tirtha_app/core/services/auth_service.dart';
+import 'package:tirtha_app/data/models/user_model.dart';
 
 class TopBar extends StatefulWidget implements PreferredSizeWidget {
   const TopBar({super.key});
@@ -14,24 +15,27 @@ class TopBar extends StatefulWidget implements PreferredSizeWidget {
 
 class _TopBarState extends State<TopBar> {
   final AuthService _authService = AuthService();
+  UserModel? _userProfile;
   String? _userRole;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadUserRole();
+    _loadUserProfile();
   }
 
-  Future<void> _loadUserRole() async {
+  Future<void> _loadUserProfile() async {
     try {
       final user = await _authService.getUserProfile();
       setState(() {
+        _userProfile = user;
         _userRole = user.role ?? 'user';
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
+        _userProfile = null;
         _userRole = 'user';
         _isLoading = false;
       });
@@ -69,6 +73,20 @@ class _TopBarState extends State<TopBar> {
     );
   }
 
+  // Helper untuk mendapatkan ImageProvider berdasarkan data profil
+  ImageProvider _getProfileImage() {
+    final profilePictureUrl = _userProfile?.profilePicture;
+    if (profilePictureUrl != null && profilePictureUrl.isNotEmpty) {
+      return NetworkImage(profilePictureUrl);
+    }
+    return const AssetImage('assets/default-avatar.png'); 
+  }
+
+  // Helper untuk mendapatkan nama pengguna
+  String _getUserName() {
+    return _userProfile?.name ?? 'Pengguna';
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -88,12 +106,18 @@ class _TopBarState extends State<TopBar> {
     }
 
     final isAdmin = _userRole == 'admin';
+    final userName = _getUserName();
+    final profileImage = _getProfileImage();
 
     return AppBar(
       automaticallyImplyLeading: false,
       backgroundColor: Colors.white,
       elevation: 0,
       scrolledUnderElevation: 0,
+      
+      // =======================================================
+      // Bagian LEADING: Ikon Menu untuk Admin / Logo Aplikasi untuk User
+      // =======================================================
       leading: isAdmin
           ? IconButton(
               icon: const Icon(Icons.menu, color: Colors.black, size: 28),
@@ -104,10 +128,38 @@ class _TopBarState extends State<TopBar> {
           : Padding(
               padding: const EdgeInsets.all(12.0),
               child: Image.asset(
-                'assets/logo_tirtha_app.png', // Ganti dengan path logo aplikasi Anda
+                'assets/logo_tirtha_app.png',
                 fit: BoxFit.contain,
               ),
             ),
+            
+      // =======================================================
+      // Bagian TITLE: Hanya tampilkan nama jika user adalah ADMIN
+      // =======================================================
+      title: isAdmin 
+          ? Text(
+              userName, // Tampilkan Nama Pengguna (Admin)
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis, // Penanganan overflow teks
+              maxLines: 1,
+            )
+          : null, // Title dihilangkan (null) untuk user biasa
+      
+      // Menggunakan titleTextStyle untuk menyesuaikan gaya title saat tidak null
+      titleTextStyle: const TextStyle(
+        color: Colors.black,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        overflow: TextOverflow.ellipsis,
+      ),
+      
+      // =======================================================
+      // Bagian ACTIONS: Foto Profil (untuk semua user)
+      // =======================================================
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 8.0),
@@ -116,10 +168,20 @@ class _TopBarState extends State<TopBar> {
               // Navigate ke profile page
               // Navigator.pushNamed(context, AppRoutes.profile);
             },
-            child: const CircleAvatar(
+            child: CircleAvatar(
               radius: 18,
-              backgroundImage: AssetImage('assets/default-avatar.png'), // Ganti dengan foto profil user
               backgroundColor: Colors.grey,
+              backgroundImage: profileImage,
+              onBackgroundImageError: (exception, stackTrace) {
+                // Biarkan default avatar muncul atau kosongkan jika error
+              },
+              child: profileImage is AssetImage
+                  ? Icon(
+                      Icons.person,
+                      size: 20,
+                      color: Colors.grey[400],
+                    )
+                  : null,
             ),
           ),
         ),
