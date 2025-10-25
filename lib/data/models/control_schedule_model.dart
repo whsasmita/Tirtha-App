@@ -8,23 +8,24 @@ class CreateControlScheduleDTO {
   Map<String, dynamic> toJson() {
     return {
       'control_date': controlDate,
+      // is_active default true di backend
     };
   }
 }
 
 class UpdateControlScheduleDTO {
   final String controlDate;
-  final bool isActive; // Sekarang optional dengan default true
+  final bool isActive;
 
   UpdateControlScheduleDTO({
     required this.controlDate,
-    this.isActive = true, // DEFAULT VALUE
+    this.isActive = true, // DEFAULT TRUE
   });
 
   Map<String, dynamic> toJson() {
     return {
       'control_date': controlDate,
-      'is_active': isActive,
+      'is_active': isActive, // KIRIM KE API
     };
   }
 }

@@ -558,18 +558,78 @@ class _ReminderPageState extends State<ReminderPage> {
     );
   }
 
+  // REPLACE method _editReminder di ReminderPage dengan ini:
+
   void _editReminder(int index) async {
     final reminder = _filteredReminders[index];
 
+    print('📝 === EDIT REMINDER DEBUG ===');
+    print('📌 Index: $index');
+    print('📌 Reminder Type: ${reminder.type}');
+    print('📌 Reminder ID: ${reminder.id}');
+    print('📌 Reminder Title: ${reminder.title}');
+    print('📌 Original Data Type: ${reminder.originalData.runtimeType}');
+
+    // Cek apakah originalData null
+    if (reminder.originalData == null) {
+      print('❌ ERROR: originalData is NULL!');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error: Data pengingat tidak lengkap'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    // Print detail data berdasarkan tipe
+    if (reminder.originalData is DrugScheduleResponseDTO) {
+      final drug = reminder.originalData as DrugScheduleResponseDTO;
+      print('💊 Drug Data:');
+      print('   - ID: ${drug.id}');
+      print('   - Name: ${drug.drugName}');
+      print('   - Dose: ${drug.dose}');
+      print('   - Date: ${drug.scheduleDate}');
+      print('   - Active: ${drug.isActive}');
+      print('   - Times: 06=${drug.at06}, 12=${drug.at12}, 18=${drug.at18}');
+    } else if (reminder.originalData is ControlScheduleResponseDTO) {
+      final control = reminder.originalData as ControlScheduleResponseDTO;
+      print('🏥 Control Data:');
+      print('   - ID: ${control.id}');
+      print('   - Date: ${control.controlDate}');
+      print('   - Active: ${control.isActive}');
+    } else if (reminder.originalData is HemodialysisScheduleResponseDTO) {
+      final hemo = reminder.originalData as HemodialysisScheduleResponseDTO;
+      print('💧 Hemodialysis Data:');
+      print('   - ID: ${hemo.id}');
+      print('   - Date: ${hemo.scheduleDate}');
+      print('   - Active: ${hemo.isActive}');
+    } else {
+      print('⚠️ WARNING: Unknown data type!');
+    }
+
+    print('🚀 Navigating to edit form...');
+
+    // Navigate dengan arguments
     final result = await Navigator.pushNamed(
       context,
       AppRoutes.createReminder,
-      arguments: reminder.originalData, // Pass model asli
+      arguments: reminder.originalData, // Pass object asli
     );
 
-    if (result == true && mounted) {
-      _fetchAllReminders(); // Refresh list
+    print('📥 Navigation result: $result');
+
+    if (result == true) {
+      print('✅ Edit successful, refreshing list...');
+      if (mounted) {
+        _fetchAllReminders(); // Refresh list
+      }
+    } else {
+      print('⚠️ Edit cancelled or failed');
     }
+
+    print('=== END EDIT REMINDER DEBUG ===\n');
   }
 
   void _showSuccessDialog(BuildContext context, String title, String message) {

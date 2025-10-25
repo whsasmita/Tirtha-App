@@ -174,38 +174,97 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       initialRoute: AppRoutes.preview,
-      routes: {
-        AppRoutes.preview: (context) => const PreviewPage(),
-        AppRoutes.home: (context) => const HomePage(),
+      
+      // ✅ GUNAKAN onGenerateRoute UNTUK HANDLE ARGUMENTS
+      onGenerateRoute: (settings) {
+        print('🔀 Navigating to: ${settings.name}');
+        print('📦 Arguments: ${settings.arguments}');
 
-        // Auth
-        AppRoutes.login: (context) => const LoginPage(),
-        AppRoutes.register: (context) => const RegisterPage(),
-        AppRoutes.profile: (context) => const ProfilePage(),
-        AppRoutes.about: (context) => const AboutPage(),
+        // Handle Reminder Form dengan arguments (untuk edit mode)
+        if (settings.name == AppRoutes.createReminder) {
+          final editData = settings.arguments; // Ambil data edit jika ada
+          return MaterialPageRoute(
+            builder: (context) => ReminderFormPage(editData: editData),
+          );
+        }
 
-        // Education & Quiz Dashboard
-        AppRoutes.educationDashboard: (context) => const EducationDashboardPage(),
-        AppRoutes.quizDashboard: (context) => const QuizDashboardPage(),
-        AppRoutes.createEducation: (context) => const UpsertEducationPage(),
-        AppRoutes.createQuiz: (context) => const UpsertQuizPage(),
+        // Routes lainnya tetap normal
+        switch (settings.name) {
+          case AppRoutes.preview:
+            return MaterialPageRoute(builder: (context) => const PreviewPage());
+          
+          case AppRoutes.home:
+            return MaterialPageRoute(builder: (context) => const HomePage());
 
-        // List Pages
-        AppRoutes.listEducation: (context) => const EducationListPage(),
-        AppRoutes.listQuiz: (context) => const QuizListPage(),
+          // Auth
+          case AppRoutes.login:
+            return MaterialPageRoute(builder: (context) => const LoginPage());
+          
+          case AppRoutes.register:
+            return MaterialPageRoute(builder: (context) => const RegisterPage());
+          
+          case AppRoutes.profile:
+            return MaterialPageRoute(builder: (context) => const ProfilePage());
+          
+          case AppRoutes.about:
+            return MaterialPageRoute(builder: (context) => const AboutPage());
 
-        // Reminder
-        AppRoutes.reminder: (context) => const ReminderPage(),
-        AppRoutes.createReminder: (context) => const ReminderFormPage(),
+          // Education & Quiz Dashboard
+          case AppRoutes.educationDashboard:
+            return MaterialPageRoute(builder: (context) => const EducationDashboardPage());
+          
+          case AppRoutes.quizDashboard:
+            return MaterialPageRoute(builder: (context) => const QuizDashboardPage());
+          
+          case AppRoutes.createEducation:
+            return MaterialPageRoute(builder: (context) => const UpsertEducationPage());
+          
+          case AppRoutes.createQuiz:
+            return MaterialPageRoute(builder: (context) => const UpsertQuizPage());
 
-        // Monitoring
-        AppRoutes.monitoring: (context) => const MonitoringPage(),
-        AppRoutes.complaintMonitoring: (context) => const ComplaintMonitoringPage(),
-        AppRoutes.createComplaintMonitoring: (context) => const CreateComplaintMonitoring(),
-        AppRoutes.hemodialysisMonitoring: (context) => const HemodialysisMonitoringPage(),
-        AppRoutes.createHemodialysisMonitoring: (context) => const CreateHemodialysisMonitoring(),
-        AppRoutes.fluidMonitoring: (context) => const FluidMonitoringPage(),
-        AppRoutes.createFluidMonitoring: (context) => const CreateFluidMonitoringPage(),
+          // List Pages
+          case AppRoutes.listEducation:
+            return MaterialPageRoute(builder: (context) => const EducationListPage());
+          
+          case AppRoutes.listQuiz:
+            return MaterialPageRoute(builder: (context) => const QuizListPage());
+
+          // Reminder
+          case AppRoutes.reminder:
+            return MaterialPageRoute(builder: (context) => const ReminderPage());
+
+          // Monitoring
+          case AppRoutes.monitoring:
+            return MaterialPageRoute(builder: (context) => const MonitoringPage());
+          
+          case AppRoutes.complaintMonitoring:
+            return MaterialPageRoute(builder: (context) => const ComplaintMonitoringPage());
+          
+          case AppRoutes.createComplaintMonitoring:
+            return MaterialPageRoute(builder: (context) => const CreateComplaintMonitoring());
+          
+          case AppRoutes.hemodialysisMonitoring:
+            return MaterialPageRoute(builder: (context) => const HemodialysisMonitoringPage());
+          
+          case AppRoutes.createHemodialysisMonitoring:
+            return MaterialPageRoute(builder: (context) => const CreateHemodialysisMonitoring());
+          
+          case AppRoutes.fluidMonitoring:
+            return MaterialPageRoute(builder: (context) => const FluidMonitoringPage());
+          
+          case AppRoutes.createFluidMonitoring:
+            return MaterialPageRoute(builder: (context) => const CreateFluidMonitoringPage());
+
+          default:
+            // Fallback untuk route yang tidak ditemukan
+            return MaterialPageRoute(
+              builder: (context) => Scaffold(
+                body: Center(
+                  child: Text('Route ${settings.name} not found'),
+                ),
+              ),
+            );
+        }
       },
     );
   }

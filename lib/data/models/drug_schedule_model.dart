@@ -23,6 +23,7 @@ class CreateDrugScheduleDTO {
       'at_06': at06,
       'at_12': at12,
       'at_18': at18,
+      // is_active default true di backend, tidak perlu kirim
     };
   }
 }
@@ -34,7 +35,7 @@ class UpdateDrugScheduleDTO {
   final bool at06;
   final bool at12;
   final bool at18;
-  final bool isActive; // Sekarang optional dengan default true
+  final bool isActive;
 
   UpdateDrugScheduleDTO({
     required this.drugName,
@@ -43,7 +44,7 @@ class UpdateDrugScheduleDTO {
     required this.at06,
     required this.at12,
     required this.at18,
-    this.isActive = true, // DEFAULT VALUE
+    this.isActive = true, // DEFAULT TRUE
   });
 
   Map<String, dynamic> toJson() {
@@ -54,7 +55,7 @@ class UpdateDrugScheduleDTO {
       'at_06': at06,
       'at_12': at12,
       'at_18': at18,
-      'is_active': isActive,
+      'is_active': isActive, // KIRIM KE API
     };
   }
 }

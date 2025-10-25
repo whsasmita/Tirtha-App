@@ -26,6 +26,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
   bool at06 = false;
   bool at12 = false;
   bool at18 = false;
+  bool isActive = true; // TAMBAHKAN INI untuk track status
 
   final TextEditingController dateController = TextEditingController();
   final TextEditingController drugNameController = TextEditingController();
@@ -62,34 +63,53 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
     final data = widget.editData;
 
     if (data is DrugScheduleResponseDTO) {
+      print('📝 Loading DRUG data for edit: ${data.toJson()}');
+      
       selectedCategory = 'minum_obat';
       editId = data.id;
       drugNameController.text = data.drugName;
 
-      // Extract dose number from string like "1 Tablet"
+      // Extract dose number from string like "1 Tablet" or just "1"
       final doseMatch = RegExp(r'\d+').firstMatch(data.dose);
       if (doseMatch != null) {
         doseController.text = doseMatch.group(0)!;
+      } else {
+        doseController.text = data.dose; // fallback ke original
       }
 
       at06 = data.at06;
       at12 = data.at12;
       at18 = data.at18;
+      isActive = data.isActive; // LOAD STATUS
 
       selectedDate = _convertDateFromAPI(data.scheduleDate);
       dateController.text = selectedDate!;
 
+      print('✅ Loaded drug data: name=${drugNameController.text}, dose=${doseController.text}, active=$isActive');
+
     } else if (data is ControlScheduleResponseDTO) {
+      print('📝 Loading CONTROL data for edit: ${data.toJson()}');
+      
       selectedCategory = 'kontrol';
       editId = data.id;
+      isActive = data.isActive; // LOAD STATUS
+      
       selectedDate = _convertDateFromAPI(data.controlDate);
       dateController.text = selectedDate!;
 
+      print('✅ Loaded control data: date=$selectedDate, active=$isActive');
+
     } else if (data is HemodialysisScheduleResponseDTO) {
+      print('📝 Loading HEMODIALYSIS data for edit: ${data.toJson()}');
+      
       selectedCategory = 'hemodialisis';
       editId = data.id;
+      isActive = data.isActive; // LOAD STATUS
+      
       selectedDate = _convertDateFromAPI(data.scheduleDate);
       dateController.text = selectedDate!;
+
+      print('✅ Loaded hemodialysis data: date=$selectedDate, active=$isActive');
     }
   }
 
@@ -97,6 +117,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
     try {
       final parts = apiDate.split('-');
       if (parts.length == 3) {
+        // Dari YYYY-MM-DD ke DD-MM-YYYY
         return '${parts[2]}-${parts[1]}-${parts[0]}';
       }
     } catch (e) {
@@ -195,6 +216,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                 at06 = false;
                 at12 = false;
                 at18 = false;
+                isActive = true;
                 drugNameController.clear();
                 doseController.text = '1';
 
@@ -218,6 +240,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
     try {
       final parts = ddMMyyyyDate.split('-');
       if (parts.length == 3) {
+        // Dari DD-MM-YYYY ke YYYY-MM-DD
         return '${parts[2]}-${parts[1]}-${parts[0]}';
       }
     } catch (e) {
@@ -267,22 +290,28 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
     }
 
     final String apiDateFormat = convertDateFormat(selectedDate ?? dateController.text);
+    
+    // Format dose sesuai API (tanpa "Tablet" jika API tidak mau)
+    final String formattedDose = doseController.text.trim();
 
     if (isEditMode && editId != null) {
       final UpdateDrugScheduleDTO updateSchedule = UpdateDrugScheduleDTO(
-        drugName: drugNameController.text,
-        dose: doseController.text + ' Tablet',
+        drugName: drugNameController.text.trim(),
+        dose: formattedDose,
         scheduleDate: apiDateFormat,
         at06: at06,
         at12: at12,
         at18: at18,
+        isActive: isActive, // KIRIM STATUS
       );
+
+      print('📤 UPDATE Drug Schedule: ${updateSchedule.toJson()}');
 
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Konfirmasi Update'),
-          content: Text('Anda akan mengubah jadwal obat "${updateSchedule.drugName}" dengan dosis ${updateSchedule.dose} pada tanggal ${selectedDate}. Lanjutkan?'),
+          content: Text('Anda akan mengubah jadwal obat "${updateSchedule.drugName}" dengan dosis ${updateSchedule.dose} pada tanggal $selectedDate. Lanjutkan?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -309,7 +338,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         await _drugScheduleService.updateDrugSchedule(editId.toString(), updateSchedule);
 
         if (!mounted) return;
-        Navigator.pop(context);
+        Navigator.pop(context); // Close loading
 
         if (!mounted) return;
         await showDialog(
@@ -320,8 +349,8 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context);
-                  if (mounted) Navigator.pop(context, true);
+                  Navigator.pop(context); // Close success dialog
+                  if (mounted) Navigator.pop(context, true); // Back to list
                 },
                 child: const Text('OK'),
               ),
@@ -329,8 +358,10 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
           ),
         );
       } catch (e) {
+        print('❌ Error updating drug schedule: $e');
+        
         if (!mounted) return;
-        Navigator.pop(context);
+        Navigator.pop(context); // Close loading
 
         if (!mounted) return;
         showDialog(
@@ -348,20 +379,23 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         );
       }
     } else {
+      // CREATE mode (unchanged)
       final CreateDrugScheduleDTO newSchedule = CreateDrugScheduleDTO(
-        drugName: drugNameController.text,
-        dose: doseController.text + ' Tablet',
+        drugName: drugNameController.text.trim(),
+        dose: formattedDose,
         scheduleDate: apiDateFormat,
         at06: at06,
         at12: at12,
         at18: at18,
       );
 
+      print('📤 CREATE Drug Schedule: ${newSchedule.toJson()}');
+
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Konfirmasi Pembuatan'),
-          content: Text('Anda akan membuat jadwal obat "${newSchedule.drugName}" dengan dosis ${newSchedule.dose} pada tanggal ${selectedDate}. Lanjutkan?'),
+          content: Text('Anda akan membuat jadwal obat "${newSchedule.drugName}" dengan dosis ${newSchedule.dose} pada tanggal $selectedDate. Lanjutkan?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -438,7 +472,12 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
     final String apiDateFormat = convertDateFormat(selectedDate!);
 
     if (isEditMode && editId != null) {
-      final UpdateControlScheduleDTO updateSchedule = UpdateControlScheduleDTO(controlDate: apiDateFormat);
+      final UpdateControlScheduleDTO updateSchedule = UpdateControlScheduleDTO(
+        controlDate: apiDateFormat,
+        isActive: isActive, // KIRIM STATUS
+      );
+
+      print('📤 UPDATE Control Schedule: ${updateSchedule.toJson()}');
 
       final confirmed = await showDialog<bool>(
         context: context,
@@ -510,6 +549,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         );
       }
     } else {
+      // CREATE mode
       final CreateControlScheduleDTO newSchedule = CreateControlScheduleDTO(controlDate: apiDateFormat);
 
       final confirmed = await showDialog<bool>(
@@ -593,7 +633,12 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
     final String apiDateFormat = convertDateFormat(selectedDate!);
 
     if (isEditMode && editId != null) {
-      final UpdateHemodialysisScheduleDTO updateSchedule = UpdateHemodialysisScheduleDTO(scheduleDate: apiDateFormat);
+      final UpdateHemodialysisScheduleDTO updateSchedule = UpdateHemodialysisScheduleDTO(
+        scheduleDate: apiDateFormat,
+        isActive: isActive, // KIRIM STATUS
+      );
+
+      print('📤 UPDATE Hemodialysis Schedule: ${updateSchedule.toJson()}');
 
       final confirmed = await showDialog<bool>(
         context: context,
@@ -665,6 +710,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         );
       }
     } else {
+      // CREATE mode
       final CreateHemodialysisScheduleDTO newSchedule = CreateHemodialysisScheduleDTO(scheduleDate: apiDateFormat);
 
       final confirmed = await showDialog<bool>(
@@ -800,9 +846,9 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
     final bool is12Available = !isToday || _isTimeSlotAvailable(12);
     final bool is18Available = !isToday || _isTimeSlotAvailable(18);
 
-    if (!is06Available) at06 = false;
-    if (!is12Available) at12 = false;
-    if (!is18Available) at18 = false;
+    if (!is06Available && at06) at06 = false;
+    if (!is12Available && at12) at12 = false;
+    if (!is18Available && at18) at18 = false;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -879,6 +925,38 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
           onChanged: is18Available ? (v) => setState(() => at18 = v!) : null,
           isDisabled: !is18Available,
         ),
+        
+        // TAMBAHKAN TOGGLE STATUS (khusus mode edit)
+        if (isEditMode) ...[
+          const SizedBox(height: 20),
+          const Text('Status Pengingat', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  isActive ? 'Aktif' : 'Tidak Aktif',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: isActive ? Colors.green.shade700 : Colors.red.shade700,
+                  ),
+                ),
+                Switch(
+                  value: isActive,
+                  onChanged: (value) => setState(() => isActive = value),
+                  activeColor: AppColors.tertiary,
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -917,6 +995,38 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
             ),
           ),
         ),
+        
+        // TAMBAHKAN TOGGLE STATUS (khusus mode edit)
+        if (isEditMode) ...[
+          const SizedBox(height: 20),
+          const Text('Status Pengingat', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  isActive ? 'Aktif' : 'Tidak Aktif',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: isActive ? Colors.green.shade700 : Colors.red.shade700,
+                  ),
+                ),
+                Switch(
+                  value: isActive,
+                  onChanged: (value) => setState(() => isActive = value),
+                  activeColor: AppColors.tertiary,
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -942,6 +1052,38 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
             ),
           ),
         ),
+        
+        // TAMBAHKAN TOGGLE STATUS (khusus mode edit)
+        if (isEditMode) ...[
+          const SizedBox(height: 20),
+          const Text('Status Pengingat', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  isActive ? 'Aktif' : 'Tidak Aktif',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: isActive ? Colors.green.shade700 : Colors.red.shade700,
+                  ),
+                ),
+                Switch(
+                  value: isActive,
+                  onChanged: (value) => setState(() => isActive = value),
+                  activeColor: AppColors.tertiary,
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -1026,7 +1168,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: Text(isEditMode ? 'UPDATE' : 'BUAT', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      child: Text(isEditMode ? 'SIMPAN PERUBAHAN' : 'BUAT', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],

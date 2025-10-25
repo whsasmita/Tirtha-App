@@ -8,23 +8,24 @@ class CreateHemodialysisScheduleDTO {
   Map<String, dynamic> toJson() {
     return {
       'schedule_date': scheduleDate,
+      // is_active default true di backend
     };
   }
 }
 
 class UpdateHemodialysisScheduleDTO {
   final String scheduleDate;
-  final bool isActive; // Sekarang optional dengan default true
+  final bool isActive;
 
   UpdateHemodialysisScheduleDTO({
     required this.scheduleDate,
-    this.isActive = true, // DEFAULT VALUE
+    this.isActive = true, // DEFAULT TRUE
   });
 
   Map<String, dynamic> toJson() {
     return {
       'schedule_date': scheduleDate,
-      'is_active': isActive,
+      'is_active': isActive, // KIRIM KE API
     };
   }
 }
