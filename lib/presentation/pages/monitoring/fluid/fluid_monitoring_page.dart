@@ -666,11 +666,12 @@ void _showInfoDialog() {
             }
           }
         },
-        backgroundColor: AppColors.tertiary,
+        backgroundColor: AppColors.secondary,
         child: const Icon(
           Icons.add,
           color: Colors.white,
         ),
+        
       ),
     );
   }

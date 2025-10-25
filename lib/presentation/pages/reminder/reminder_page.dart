@@ -65,6 +65,9 @@ class _ReminderPageState extends State<ReminderPage> {
   }
 
   Future<void> _fetchAllReminders() async {
+    // Check if the state is mounted before setting state
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
     });
@@ -72,6 +75,8 @@ class _ReminderPageState extends State<ReminderPage> {
     List<ReminderItem> reminders = [];
 
     try {
+      // Fetch schedules with error handling and null checks
+      
       // Fetch drug schedules
       try {
         final drugSchedules = await _drugScheduleService.getDrugSchedules();
@@ -100,7 +105,6 @@ class _ReminderPageState extends State<ReminderPage> {
             type: 'control',
             title: 'Jadwal Kontrol',
             date: control.controlDate,
-            times: '08:00 WIB',
             isActive: control.isActive,
             originalData: control,
           ));
@@ -118,7 +122,6 @@ class _ReminderPageState extends State<ReminderPage> {
             type: 'hemodialysis',
             title: 'Jadwal Hemodialisis',
             date: hemo.scheduleDate,
-            times: '08:00 WIB',
             isActive: hemo.isActive,
             originalData: hemo,
           ));
@@ -130,16 +133,20 @@ class _ReminderPageState extends State<ReminderPage> {
       // Sort by date (newest first)
       reminders.sort((a, b) => b.date.compareTo(a.date));
 
-      setState(() {
-        _allReminders = reminders;
-        _applyFilter();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _allReminders = reminders;
+          _applyFilter();
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       print('❌ Unexpected error in _fetchAllReminders: $e');
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -160,7 +167,7 @@ class _ReminderPageState extends State<ReminderPage> {
     if (searchQuery.isNotEmpty) {
       filtered = filtered.where((reminder) {
         return reminder.title.toLowerCase().contains(searchQuery) ||
-               (reminder.dose?.toLowerCase().contains(searchQuery) ?? false);
+              (reminder.dose?.toLowerCase().contains(searchQuery) ?? false);
       }).toList();
     }
     
@@ -381,9 +388,9 @@ class _ReminderPageState extends State<ReminderPage> {
                     SizedBox(height: 8),
                     Text('2. jadwal kontrol', style: TextStyle(fontSize: 15)),
                     SizedBox(height: 8),
-                    Text('3. jadwal hemodialisis dan', style: TextStyle(fontSize: 15)),
-                    SizedBox(height: 8),
-                    Text('4. Pemantauan cairan.', style: TextStyle(fontSize: 15)),
+                    Text('3. jadwal hemodialisis', style: TextStyle(fontSize: 15)),
+                    // SizedBox(height: 8),
+                    // Text('4. Pemantauan cairan.', style: TextStyle(fontSize: 15)),
                   ],
                 ),
               ),
@@ -459,17 +466,28 @@ class _ReminderPageState extends State<ReminderPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context); // Close dialog
+              final confirmationContext = context;
+              Navigator.pop(confirmationContext); // Close confirmation dialog
+
+              // 1. Simpan Future untuk dialog loading
+              BuildContext? loadingDialogContext;
 
               // Show loading
               showDialog(
                 context: context,
                 barrierDismissible: false,
-                builder: (context) => const Center(
-                  child: CircularProgressIndicator(),
-                ),
+                builder: (ctx) { // Gunakan ctx sebagai konteks dialog loading
+                  loadingDialogContext = ctx; // Simpan konteks dialog loading
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                },
               );
 
+              // Tambahkan delay kecil untuk memastikan dialog loading benar-benar ada
+              // di tree sebelum operasi delete berjalan. Ini adalah praktik aman (safe practice).
+              await Future.delayed(const Duration(milliseconds: 50));
+              
               try {
                 // Delete based on type
                 if (reminder.type == 'drug') {
@@ -480,30 +498,50 @@ class _ReminderPageState extends State<ReminderPage> {
                   await _hemodialysisScheduleService.deleteHemodialysisSchedule(reminder.id);
                 }
 
-                if (!mounted) return;
-                Navigator.pop(context); // Hide loading
+                // Close loading dialog first
+                // Menggunakan loadingDialogContext yang telah disimpan
+                if (mounted && loadingDialogContext != null) {
+                  // HANYA pop jika konteks masih 'mounted' dan valid
+                  if (Navigator.canPop(loadingDialogContext!)) {
+                    Navigator.of(loadingDialogContext!).pop(); // Hide loading
+                  }
+                }
 
                 // Refresh list
                 await _fetchAllReminders();
 
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Pengingat "${reminder.title}" berhasil dihapus'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                // Show success message
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Pengingat "${reminder.title}" berhasil dihapus'),
+                      backgroundColor: Colors.green,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
               } catch (e) {
-                if (!mounted) return;
-                Navigator.pop(context); // Hide loading
+                print('❌ Error deleting reminder: $e');
+                
+                // Close loading dialog
+                // Menggunakan loadingDialogContext yang telah disimpan
+                if (mounted && loadingDialogContext != null) {
+                  // HANYA pop jika konteks masih 'mounted' dan valid
+                  if (Navigator.canPop(loadingDialogContext!)) {
+                    Navigator.of(loadingDialogContext!).pop(); // Hide loading
+                  }
+                }
 
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Gagal menghapus pengingat: ${e.toString()}'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                // Show error message
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Gagal menghapus pengingat: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                }
               }
             },
             style: ElevatedButton.styleFrom(
@@ -522,8 +560,11 @@ class _ReminderPageState extends State<ReminderPage> {
     if (schedule.at06) times.add('06:00');
     if (schedule.at12) times.add('12:00');
     if (schedule.at18) times.add('18:00');
-    return times.isEmpty ? 'Tidak ada jadwal' : '${times.join(', ')} WIB';
-  }
+
+    // Menggunakan join(', ') untuk menggabungkan elemen list menjadi string
+    // dengan koma dan spasi sebagai pemisah.
+    return times.isEmpty ? 'Tidak ada jadwal' : times.join(', ');
+}
 
   String _formatDate(String date) {
     try {
@@ -790,7 +831,9 @@ class _ReminderPageState extends State<ReminderPage> {
                                                 ),
                                                 const SizedBox(height: 4),
                                                 Text(
-                                                  '${_formatDate(reminder.date)} | ${reminder.times}',
+                                                  reminder.times != null 
+                                                      ? '${_formatDate(reminder.date)} | ${reminder.times}'
+                                                      : _formatDate(reminder.date),
                                                   style: TextStyle(
                                                     fontSize: 13,
                                                     color: Colors.grey.shade600,
@@ -819,6 +862,16 @@ class _ReminderPageState extends State<ReminderPage> {
                                           if (reminder.dose != null) ...[
                                             Text(
                                               'Dosis: ${reminder.dose}',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey.shade700,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                          ],
+                                          if (reminder.times != null) ...[
+                                            Text(
+                                              'Jam: ${reminder.times}',
                                               style: TextStyle(
                                                 fontSize: 14,
                                                 color: Colors.grey.shade700,

@@ -35,22 +35,17 @@ class _HemodialysisMonitoringPageState
     try {
       final data = await _service.getHemodialysisMonitoring();
 
-      // --- PERBAIKAN: SORTING DATA BERDASARKAN TANGGAL ---
       data.sort((a, b) {
-        // Membandingkan tanggal, dari terbaru ke terlama (descending)
-        // Mengubah string tanggal YYYY-MM-DD menjadi DateTime untuk perbandingan
         final dateA = DateTime.parse(a.monitoringDate);
         final dateB = DateTime.parse(b.monitoringDate);
-        return dateB.compareTo(dateA); // b compareTo a = descending
+        return dateB.compareTo(dateA);
       });
-      // -----------------------------------------------------
 
       setState(() {
         _monitorings = data;
         _isLoading = false;
       });
     } catch (e) {
-      // ... (penanganan error tetap sama)
       setState(() {
         _errorMessage = e.toString().replaceAll('Exception: ', '');
         _isLoading = false;
@@ -60,8 +55,6 @@ class _HemodialysisMonitoringPageState
 
   String _formatDate(String apiDate) {
     try {
-      // Format dari API: "2025-10-24" (YYYY-MM-DD)
-      // Ubah ke: "24-10-2025" (DD-MM-YYYY)
       final parts = apiDate.split('-');
       if (parts.length == 3) {
         return '${parts[2]}-${parts[1]}-${parts[0]}';
@@ -94,12 +87,6 @@ class _HemodialysisMonitoringPageState
           textAlign: TextAlign.center,
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: AppColors.textSecondary),
-            onPressed: _loadData,
-          ),
-        ],
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,
@@ -122,12 +109,12 @@ class _HemodialysisMonitoringPageState
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -232,107 +219,150 @@ class _HemodialysisMonitoringPageState
       );
     }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: _buildCustomTable(_monitorings),
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: _buildModernTable(_monitorings),
+      ),
     );
   }
 
-  Widget _buildCustomTable(List<HemodialysisMonitoringItem> data) {
-    const double colWidth = 95.0;
-    const double dateColWidth = 110.0;
+  Widget _buildModernTable(List<HemodialysisMonitoringItem> data) {
+    const double colWidth = 110.0;
+    const double dateColWidth = 120.0;
 
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header Row 1
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildHeaderCell(
-                  'Tanggal',
-                  width: dateColWidth,
-                  height: 70,
-                  rowspan: true,
+            // Header Row 1 - Main Categories
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.secondary,
+                    AppColors.secondary.withOpacity(0.85),
+                  ],
                 ),
-                _buildHeaderCell(
-                  'Tekanan Darah (MMHG)',
-                  width: colWidth * 2,
-                  height: 35,
-                ),
-                _buildHeaderCell(
-                  'Berat Badan (KG)',
-                  width: colWidth * 2,
-                  height: 35,
-                  isLast: true,
-                ),
-              ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildModernHeaderCell(
+                    'Tanggal',
+                    width: dateColWidth,
+                    height: 60,
+                    rowspan: true,
+                    icon: Icons.calendar_today,
+                  ),
+                  _buildModernHeaderCell(
+                    'Tekanan Darah',
+                    width: colWidth * 2,
+                    height: 30,
+                    icon: Icons.favorite,
+                    subtitle: 'MMHG',
+                  ),
+                  _buildModernHeaderCell(
+                    'Berat Badan',
+                    width: colWidth * 2,
+                    height: 30,
+                    isLast: true,
+                    icon: Icons.monitor_weight,
+                    subtitle: 'KG',
+                  ),
+                ],
+              ),
             ),
-            // Header Row 2
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: dateColWidth,
-                  height: 35,
-                  color: AppColors.secondary,
-                ),
-                _buildSubHeaderCell('Sebelum HD', width: colWidth),
-                _buildSubHeaderCell('Setelah HD', width: colWidth),
-                _buildSubHeaderCell('Sebelum HD', width: colWidth),
-                _buildSubHeaderCell(
-                  'Setelah HD',
-                  width: colWidth,
-                  isLast: true,
-                ),
-              ],
+            // Header Row 2 - Sub Categories
+            Container(
+              color: AppColors.secondary.withOpacity(0.15),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(width: dateColWidth),
+                  _buildSubHeaderCell('Sebelum HD', width: colWidth),
+                  _buildSubHeaderCell('Setelah HD', width: colWidth),
+                  _buildSubHeaderCell('Sebelum HD', width: colWidth),
+                  _buildSubHeaderCell('Setelah HD', width: colWidth, isLast: true),
+                ],
+              ),
             ),
-            // Data rows
-            ...data.map((item) => _buildDataRow(item)).toList(),
+            // Data rows with alternating colors
+            ...data.asMap().entries.map((entry) {
+              final index = entry.key;
+              final item = entry.value;
+              return _buildModernDataRow(item, index);
+            }).toList(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeaderCell(
+  Widget _buildModernHeaderCell(
     String text, {
     required double width,
     required double height,
     bool rowspan = false,
     bool isLast = false,
+    IconData? icon,
+    String? subtitle,
   }) {
     return Container(
       width: width,
-      height: height,
+      height: rowspan ? 90 : height,
       decoration: BoxDecoration(
-        color: AppColors.secondary,
         border: Border(
-          right:
-              isLast ? BorderSide.none : BorderSide(color: Colors.grey[300]!),
-          bottom:
-              rowspan ? BorderSide.none : BorderSide(color: Colors.grey[300]!),
+          right: isLast
+              ? BorderSide.none
+              : BorderSide(color: Colors.white.withOpacity(0.3), width: 1),
         ),
       ),
-      padding: const EdgeInsets.all(8.0),
-      child: Center(
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-            color: Colors.white,
-            height: 1.2,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(height: 4),
+          ],
+          Text(
+            text,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: Colors.white,
+              height: 1.2,
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
-        ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.white.withOpacity(0.9),
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -344,23 +374,23 @@ class _HemodialysisMonitoringPageState
   }) {
     return Container(
       width: width,
-      height: 35,
+      height: 40,
       decoration: BoxDecoration(
-        color: AppColors.secondary.withOpacity(0.9),
         border: Border(
-          right:
-              isLast ? BorderSide.none : BorderSide(color: Colors.grey[300]!),
-          bottom: BorderSide(color: Colors.grey[300]!),
+          right: isLast
+              ? BorderSide.none
+              : BorderSide(color: Colors.grey[300]!, width: 1),
+          bottom: BorderSide(color: Colors.grey[300]!, width: 1),
         ),
       ),
       padding: const EdgeInsets.all(8.0),
       child: Center(
         child: Text(
           text,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 11,
-            color: Colors.white,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+            color: AppColors.secondary,
           ),
           textAlign: TextAlign.center,
         ),
@@ -368,41 +398,55 @@ class _HemodialysisMonitoringPageState
     );
   }
 
-  Widget _buildDataRow(HemodialysisMonitoringItem item) {
-    const double colWidth = 95.0;
-    const double dateColWidth = 110.0;
+  Widget _buildModernDataRow(HemodialysisMonitoringItem item, int index) {
+    const double colWidth = 110.0;
+    const double dateColWidth = 120.0;
+    final isEven = index % 2 == 0;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildDataCell(_formatDate(item.monitoringDate), width: dateColWidth),
-        _buildDataCell(item.bpBefore, width: colWidth),
-        _buildDataCell(item.bpAfter, width: colWidth),
-        _buildDataCell('${item.weightBefore} Kg', width: colWidth),
-        _buildDataCell('${item.weightAfter} Kg', width: colWidth, isLast: true),
-      ],
+    return Container(
+      color: isEven ? Colors.white : Colors.grey[50],
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildModernDataCell(
+            _formatDate(item.monitoringDate),
+            width: dateColWidth,
+            isDate: true,
+          ),
+          _buildModernDataCell(item.bpBefore, width: colWidth),
+          _buildModernDataCell(item.bpAfter, width: colWidth),
+          _buildModernDataCell('${item.weightBefore}', width: colWidth),
+          _buildModernDataCell('${item.weightAfter}', width: colWidth, isLast: true),
+        ],
+      ),
     );
   }
 
-  Widget _buildDataCell(
+  Widget _buildModernDataCell(
     String text, {
     required double width,
     bool isLast = false,
+    bool isDate = false,
   }) {
     return Container(
       width: width,
       decoration: BoxDecoration(
         border: Border(
-          right:
-              isLast ? BorderSide.none : BorderSide(color: Colors.grey[300]!),
-          bottom: BorderSide(color: Colors.grey[300]!),
+          right: isLast
+              ? BorderSide.none
+              : BorderSide(color: Colors.grey[200]!, width: 1),
+          bottom: BorderSide(color: Colors.grey[200]!, width: 1),
         ),
       ),
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
       child: Center(
         child: Text(
           text,
-          style: const TextStyle(fontSize: 11),
+          style: TextStyle(
+            fontSize: isDate ? 12 : 13,
+            fontWeight: isDate ? FontWeight.w600 : FontWeight.w500,
+            color: isDate ? AppColors.secondary : Colors.grey[800],
+          ),
           textAlign: TextAlign.center,
         ),
       ),

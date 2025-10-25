@@ -28,6 +28,7 @@ class BottomNavV1 extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
+          // Home
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -41,6 +42,7 @@ class BottomNavV1 extends StatelessWidget {
             ),
           ),
           
+          // Menu Book
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -54,6 +56,7 @@ class BottomNavV1 extends StatelessWidget {
             ),
           ),
           
+          // Kuis (NEW)
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -61,9 +64,23 @@ class BottomNavV1 extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: Icon(Icons.person_outline, size: 30),
+              icon: Icon(Icons.help_outline, size: 30),
               color: selectedIndex == 2 ? Colors.white : Colors.grey,
               onPressed: () => onItemTapped(2),
+            ),
+          ),
+          
+          // Profile
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: selectedIndex == 3 ? AppColors.secondary : Colors.transparent,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: Icon(Icons.person_outline, size: 30),
+              color: selectedIndex == 3 ? Colors.white : Colors.grey,
+              onPressed: () => onItemTapped(3),
             ),
           ),
         ],

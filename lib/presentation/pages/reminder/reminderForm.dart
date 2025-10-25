@@ -9,7 +9,7 @@ import 'package:tirtha_app/data/models/hemodialysis_schedule_model.dart';
 
 class ReminderFormPage extends StatefulWidget {
   final dynamic editData;
-  
+
   const ReminderFormPage({Key? key, this.editData}) : super(key: key);
 
   @override
@@ -54,7 +54,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
     if (!mounted) return;
     await Future.delayed(const Duration(milliseconds: 100));
     if (!mounted) return;
-    
+
     showDialog(context: context, builder: (_) => dialog);
   }
 
@@ -67,7 +67,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
   @override
   void initState() {
     super.initState();
-    
+
     if (widget.editData != null) {
       isEditMode = true;
       _loadEditData();
@@ -80,30 +80,30 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
 
   void _loadEditData() {
     final data = widget.editData;
-    
+
     if (data is DrugScheduleResponseDTO) {
       selectedCategory = 'minum_obat';
       editId = data.id;
       drugNameController.text = data.drugName;
-      
+
       final doseMatch = RegExp(r'\d+').firstMatch(data.dose);
       if (doseMatch != null) {
         doseController.text = doseMatch.group(0)!;
       }
-      
+
       at06 = data.at06;
       at12 = data.at12;
       at18 = data.at18;
-      
+
       selectedDate = _convertDateFromAPI(data.scheduleDate);
       dateController.text = selectedDate!;
-      
+
     } else if (data is ControlScheduleResponseDTO) {
       selectedCategory = 'kontrol';
       editId = data.id;
       selectedDate = _convertDateFromAPI(data.controlDate);
       dateController.text = selectedDate!;
-      
+
     } else if (data is HemodialysisScheduleResponseDTO) {
       selectedCategory = 'hemodialisis';
       editId = data.id;
@@ -125,10 +125,23 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
   }
 
   void _selectDate() async {
+    // Current date stripped of time components to allow today's date selection but prevent past dates
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+
+    DateTime initialDate = selectedDate != null
+        ? _convertDisplayDateToDateTime(selectedDate!)
+        : today;
+
+    if (initialDate.isBefore(today)) {
+        initialDate = today;
+    }
+
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
+      initialDate: initialDate,
+      firstDate: today, // Start date is today (preventing past dates)
       lastDate: DateTime(2100),
       builder: (context, child) {
         return Theme(
@@ -147,10 +160,50 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       setState(() {
         selectedDate = "${picked.day.toString().padLeft(2, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.year}";
         dateController.text = selectedDate!;
+        // When date changes, we need to re-evaluate which time slots are available
       });
     }
   }
 
+  DateTime _convertDisplayDateToDateTime(String ddMMyyyyDate) {
+    try {
+      final parts = ddMMyyyyDate.split('-');
+      if (parts.length == 3) {
+        return DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+      }
+    } catch (e) {
+      print('⚠️ Date conversion to DateTime error: $e');
+    }
+    return DateTime.now(); // Fallback to now
+  }
+  
+  // New function to check if a time slot is available
+  bool _isTimeSlotAvailable(int hour) {
+    if (selectedDate == null) return true; // If no date selected, assume all is fine
+
+    final DateTime now = DateTime.now();
+    final DateTime selected = _convertDisplayDateToDateTime(selectedDate!);
+    final DateTime today = DateTime(now.year, now.month, now.day);
+
+    // If the selected date is after today, all slots are available
+    if (selected.isAfter(today)) {
+      return true;
+    }
+
+    // If the selected date is today, check the current hour
+    if (selected.isAtSameMomentAs(today)) {
+      final int currentHour = now.hour;
+      // The hour passed (e.g., hour=6 for 06:00) must be greater than or equal to the current hour
+      // For safety, let's say the time slot is *unavailable* if the current time is past the slot time.
+      // E.g., if it's 10:00, 06:00 is unavailable.
+      return currentHour < hour;
+    }
+
+    // If the selected date is before today (shouldn't happen due to date picker validation),
+    // but as a fallback, all slots should be unavailable.
+    return false;
+  }
+  
   void _handleReset() {
     showDialog(
       context: context,
@@ -172,12 +225,15 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                 at06 = false;
                 at12 = false;
                 at18 = false;
-                selectedDate = null;
                 selectedTime = null;
                 drugNameController.clear();
                 doseController.text = '1';
-                dateController.clear();
                 timeController.clear();
+                
+                // Reset date to today
+                DateTime now = DateTime.now();
+                selectedDate = "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}";
+                dateController.text = selectedDate!;
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Form berhasil di-reset')),
@@ -227,6 +283,23 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       );
       return;
     }
+
+    // Check if any selected time is now unavailable
+    if (selectedDate != null && _convertDisplayDateToDateTime(selectedDate!).isAtSameMomentAs(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day))) {
+        if (at06 && !_isTimeSlotAvailable(6)) {
+             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Jam 06:00 sudah terlewat untuk hari ini. Silakan batalkan pilihan atau ubah tanggal.')));
+            return;
+        }
+        if (at12 && !_isTimeSlotAvailable(12)) {
+             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Jam 12:00 sudah terlewat untuk hari ini. Silakan batalkan pilihan atau ubah tanggal.')));
+            return;
+        }
+        if (at18 && !_isTimeSlotAvailable(18)) {
+             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Jam 18:00 sudah terlewat untuk hari ini. Silakan batalkan pilihan atau ubah tanggal.')));
+            return;
+        }
+    }
+
 
     final String apiDateFormat = convertDateFormat(selectedDate ?? dateController.text);
 
@@ -640,6 +713,8 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
                 at18 = false;
                 selectedTime = null;
                 timeController.clear();
+                
+                // Set date to today
                 DateTime now = DateTime.now();
                 selectedDate = "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}";
                 dateController.text = selectedDate!;
@@ -656,6 +731,19 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
   }
 
   Widget _buildMinumObatFields() {
+    // Check for today's date and current time availability
+    final bool isToday = selectedDate != null && _convertDisplayDateToDateTime(selectedDate!).isAtSameMomentAs(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day));
+    
+    // Determine which time slots are available (i.e., not already passed today)
+    final bool is06Available = !isToday || _isTimeSlotAvailable(6);
+    final bool is12Available = !isToday || _isTimeSlotAvailable(12);
+    final bool is18Available = !isToday || _isTimeSlotAvailable(18);
+
+    // If a time slot becomes unavailable, deselect it
+    if (!is06Available) at06 = false;
+    if (!is12Available) at12 = false;
+    if (!is18Available) at18 = false;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -713,20 +801,37 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         const SizedBox(height: 20),
         const Text('Pilih Jam Pengingat', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
-        _buildTimeCheckbox(title: 'Pagi (06:00 WIB)', value: at06, onChanged: (v) => setState(() => at06 = v!)),
-        _buildTimeCheckbox(title: 'Siang (12:00 WIB)', value: at12, onChanged: (v) => setState(() => at12 = v!)),
-        _buildTimeCheckbox(title: 'Sore (18:00 WIB)', value: at18, onChanged: (v) => setState(() => at18 = v!)),
+        // Pass availability and update logic
+        _buildTimeCheckbox(
+            title: 'Pagi (06:00)',
+            value: at06,
+            onChanged: is06Available ? (v) => setState(() => at06 = v!) : null,
+            isDisabled: !is06Available,
+        ),
+        _buildTimeCheckbox(
+            title: 'Siang (12:00)',
+            value: at12,
+            onChanged: is12Available ? (v) => setState(() => at12 = v!) : null,
+            isDisabled: !is12Available,
+        ),
+        _buildTimeCheckbox(
+            title: 'Sore (18:00)',
+            value: at18,
+            onChanged: is18Available ? (v) => setState(() => at18 = v!) : null,
+            isDisabled: !is18Available,
+        ),
       ],
     );
   }
 
-  Widget _buildTimeCheckbox({required String title, required bool value, required ValueChanged<bool?> onChanged}) {
+  Widget _buildTimeCheckbox({required String title, required bool value, required ValueChanged<bool?>? onChanged, required bool isDisabled}) {
     return CheckboxListTile(
-      title: Text(title, style: const TextStyle(color: Colors.white)),
+      title: Text(title, style: TextStyle(color: isDisabled ? Colors.grey.shade400 : Colors.white)),
       value: value,
       onChanged: onChanged,
       checkColor: Colors.white,
       activeColor: AppColors.tertiary,
+      tileColor: isDisabled ? Colors.transparent : null, // Not strictly necessary, but can hint at disabled state
       controlAffinity: ListTileControlAffinity.leading,
       contentPadding: EdgeInsets.zero,
     );

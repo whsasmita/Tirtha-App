@@ -159,6 +159,8 @@ class _EducationListPageState extends State<EducationListPage> {
     } else if (index == 1) {
       // Tetap di halaman ini
     } else if (index == 2) {
+      Navigator.pushNamed(context, AppRoutes.listQuiz);
+    } else if (index == 3) {
       Navigator.pushNamed(context, AppRoutes.profile);
     }
   }
@@ -323,7 +325,7 @@ class _EducationListPageState extends State<EducationListPage> {
         crossAxisCount: 2,
         crossAxisSpacing: 16.0,
         mainAxisSpacing: 16.0,
-        childAspectRatio: _cardAspectRatio, // Menggunakan rasio 1.4
+        childAspectRatio: _cardAspectRatio, // Menggunakan rasio 0.75
       ),
       itemCount: _filteredEducations.length + (_isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {

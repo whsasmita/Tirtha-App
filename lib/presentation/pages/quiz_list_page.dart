@@ -152,6 +152,8 @@ class _QuizListPageState extends State<QuizListPage> {
     } else if (index == 1) {
       Navigator.pushNamed(context, AppRoutes.listEducation);
     } else if (index == 2) {
+      // Tetap di halaman ini
+    } else if (index == 3) {
       Navigator.pushNamed(context, AppRoutes.profile);
     }
   }

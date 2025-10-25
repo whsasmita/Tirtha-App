@@ -145,6 +145,8 @@ class _HomePageState extends State<HomePage> {
     } else if (index == 1) {
       Navigator.pushNamed(context, AppRoutes.listEducation);
     } else if (index == 2) {
+      Navigator.pushNamed(context, AppRoutes.listQuiz);
+    } else if (index == 3) {
       Navigator.pushNamed(context, AppRoutes.profile);
     }
   }
@@ -180,7 +182,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _openWhatsApp() async {
-    const String phoneNumber = '6283114755807';
+    const String phoneNumber = '6281933024927';
     const String message = "Halo, saya ingin bertanya";
 
     final Uri whatsappUrl = Uri.parse(
@@ -471,13 +473,6 @@ class _HomePageState extends State<HomePage> {
                       },
                     ),
                     MenuHeaderItem(
-                      icon: Icons.description_outlined,
-                      title: 'Kuis',
-                      onTap: () {
-                        Navigator.pushNamed(context, AppRoutes.listQuiz);
-                      },
-                    ),
-                    MenuHeaderItem(
                       icon: Icons.alarm,
                       title: 'Pengingat',
                       onTap: () {
@@ -602,7 +597,7 @@ class _HomePageState extends State<HomePage> {
                       'Atur pengingat untuk jadwal kontrol dan minum obat Anda',
                   buttonText: 'Buat Pengingat',
                   backgroundColor: const Color(0xFFFF9800),
-                  buttonColor: const Color(0xFF4CAF50),
+                  buttonColor: AppColors.secondary,
                   onButtonPressed: () {
                     Navigator.pushNamed(context, AppRoutes.reminder);
                   },

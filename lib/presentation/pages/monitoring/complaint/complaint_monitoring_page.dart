@@ -330,7 +330,7 @@ class _ComplaintMonitoringPageState extends State<ComplaintMonitoringPage> {
           // Reload data setelah kembali dari create page
           _loadComplaints();
         },
-        backgroundColor: AppColors.secondary,
+        backgroundColor: AppColors.tertiary,
         child: const Icon(
           Icons.add,
           color: AppColors.textSecondary,

@@ -32,20 +32,29 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   /// Menampilkan dialog error
+  /// Menampilkan dialog error
   void _showErrorDialog(String message) {
     // Tentukan title berdasarkan message
     String title = 'Terjadi Kesalahan';
     IconData icon = Icons.error_outline;
     Color iconColor = Colors.red;
 
-    if (message.toLowerCase().contains('email atau password')) {
+    if (message.toLowerCase().contains('email') && 
+        message.toLowerCase().contains('password')) {
       title = 'Login Gagal';
-      icon = Icons.lock_outline;
+      icon = Icons.lock_person_outlined;
+      iconColor = Colors.orange;
+    } else if (message.toLowerCase().contains('akun tidak ditemukan')) {
+      title = 'Akun Tidak Ditemukan';
+      icon = Icons.person_off_outlined;
+      iconColor = Colors.orange;
     } else if (message.toLowerCase().contains('koneksi') ||
-        message.toLowerCase().contains('jaringan')) {
+        message.toLowerCase().contains('jaringan') ||
+        message.toLowerCase().contains('internet')) {
       title = 'Masalah Koneksi';
       icon = Icons.wifi_off;
-    } else if (message.toLowerCase().contains('server')) {
+    } else if (message.toLowerCase().contains('server') ||
+        message.toLowerCase().contains('timeout')) {
       title = 'Server Bermasalah';
       icon = Icons.cloud_off;
     } else if (message.toLowerCase().contains('tidak lengkap') ||
@@ -61,52 +70,64 @@ class _LoginPageState extends State<LoginPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(20),
           ),
-          title: Row(
+          contentPadding: const EdgeInsets.all(24),
+          title: Column(
             children: [
-              Icon(
-                icon,
-                color: iconColor,
-                size: 28,
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  color: iconColor,
+                  size: 48,
+                ),
               ),
-              const SizedBox(width: 10),
-              Flexible(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
           content: Text(
             message,
-            style: const TextStyle(fontSize: 16),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+            ),
           ),
           actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              style: TextButton.styleFrom(
-                backgroundColor: AppColors.secondary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.secondary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'OK',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                child: const Text(
+                  'Mengerti',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),

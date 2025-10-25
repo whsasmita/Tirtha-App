@@ -98,6 +98,111 @@ class _CreateHemodialysisMonitoringState
     );
   }
 
+  void _showResetConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.refresh, color: Colors.orange.shade700),
+              const SizedBox(width: 8),
+              const Text('Konfirmasi Reset'),
+            ],
+          ),
+          content: const Text(
+            'Apakah Anda yakin ingin mereset semua data yang telah diisi?\n\nSemua data akan dikosongkan.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _handleReset();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Data berhasil direset'),
+                    backgroundColor: Colors.green,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Reset'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSubmitConfirmation() {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.save_outlined, color: AppColors.secondary),
+              const SizedBox(width: 8),
+              const Text('Konfirmasi Simpan'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Pastikan data yang Anda masukkan sudah benar:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Text('• Tekanan Darah Sebelum: ${_tekananSebelumSistolik.text}/${_tekananSebelumDiastolik.text} mmHg'),
+              Text('• Tekanan Darah Sesudah: ${_tekananSetelahSistolik.text}/${_tekananSetelahDiastolik.text} mmHg'),
+              Text('• Berat Badan Sebelum: ${_beratSebelum.text} Kg'),
+              Text('• Berat Badan Sesudah: ${_beratSetelah.text} Kg'),
+              const SizedBox(height: 12),
+              const Text('Apakah Anda yakin ingin menyimpan data ini?'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _handleSubmit();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.secondary,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Simpan'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _handleReset() {
     setState(() {
       _tekananSebelumSistolik.clear();
@@ -110,10 +215,6 @@ class _CreateHemodialysisMonitoringState
   }
 
   Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
     // Show loading
     setState(() => _isLoading = true);
 
@@ -256,7 +357,7 @@ class _CreateHemodialysisMonitoringState
                       Expanded(
                         flex: 1,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleReset,
+                          onPressed: _isLoading ? null : _showResetConfirmation,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF5A5A5A),
                             foregroundColor: AppColors.textSecondary,
@@ -279,9 +380,9 @@ class _CreateHemodialysisMonitoringState
                       Expanded(
                         flex: 2,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleSubmit,
+                          onPressed: _isLoading ? null : _showSubmitConfirmation,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.tertiary,
+                            backgroundColor: AppColors.secondary,
                             foregroundColor: AppColors.textSecondary,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(

@@ -118,7 +118,7 @@ class _TopBarState extends State<TopBar> {
             },
             child: const CircleAvatar(
               radius: 18,
-              backgroundImage: AssetImage('assets/doctor.png'), // Ganti dengan foto profil user
+              backgroundImage: AssetImage('assets/default-avatar.png'), // Ganti dengan foto profil user
               backgroundColor: Colors.grey,
             ),
           ),
