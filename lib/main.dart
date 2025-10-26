@@ -148,6 +148,8 @@ class _MyAppState extends State<MyApp> {
               'Default Channel',
               channelDescription: 'This channel is used for important notifications.',
               icon: 'notif_icon',
+              // largeIcon: DrawableResourceAndroidBitmap('notif_icons'),
+              color: const Color.fromARGB(255, 33, 150, 243),
               importance: Importance.max,
               priority: Priority.high,
             ),
