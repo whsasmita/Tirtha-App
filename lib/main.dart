@@ -85,39 +85,43 @@ Future<void> requestNotificationPermissions() async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // 1. Definisikan status inisialisasi di luar
+  bool firebaseInitialized = false; 
+
   try {
     // Initialize Firebase
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp();
+      // Tetapkan nilainya setelah berhasil
+      firebaseInitialized = true; 
     }
   } catch (e) {
-    // Handle Firebase init error (no prints)
+    // Biarkan firebaseInitialized tetap false (nilai default) jika gagal
   }
 
-  // Initialize local notifications
+  // Lanjutkan inisialisasi lainnya...
   await initializeLocalNotifications();
-
-  // Request notification permissions
   await requestNotificationPermissions();
-
-  // Set up background message handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-  // Initialize API Client
   ApiClient.init();
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        // Gunakan variabel yang sudah diinisialisasi
+        ChangeNotifierProvider(
+          create: (context) => AuthProvider(isFirebaseReady: firebaseInitialized),
+        ),
       ],
-      child: const MyApp(),
+      child: MyApp(isFirebaseReady: firebaseInitialized),
     ),
   );
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
+  final bool isFirebaseReady; // 👈 DEFINISI FIELD BARU
+  
+  const MyApp({super.key, required this.isFirebaseReady});
 
   @override
   State<MyApp> createState() => _MyAppState();

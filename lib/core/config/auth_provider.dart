@@ -4,6 +4,9 @@ import 'package:tirtha_app/data/models/user_model.dart';
 import 'package:tirtha_app/core/services/auth_service.dart';
 
 class AuthProvider extends ChangeNotifier {
+  // 1. TAMBAHKAN FIELD BARU
+  final bool isFirebaseReady;
+
   final AuthService _authService = AuthService();
 
   UserModel? _user;
@@ -15,7 +18,22 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get role => _user?.role;
 
+  // 2. MODIFIKASI CONSTRUCTOR
+  AuthProvider({required this.isFirebaseReady});
+  
+  // Catatan: Anda tidak perlu memanggil checkAuth di sini.
+  // checkAuth sebaiknya dipanggil setelah provider ini dibuat,
+  // seperti yang sudah Anda lakukan di MyApp.build(context).
+
   Future<void> login(String email, String password, String? fcmToken, String timezone) async {
+    // Tambahkan pengamanan: Jangan jalankan jika Firebase belum siap
+    if (!isFirebaseReady) {
+      // Jika login membutuhkan layanan notifikasi/fcm, 
+      // dan notifikasi bergantung pada Firebase.
+      // Anda bisa melempar error di sini jika logikanya mengharuskan Firebase siap.
+      // throw Exception("Firebase services are not ready."); 
+    }
+    
     try {
       _isLoading = true;
       notifyListeners();
@@ -42,6 +60,10 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> checkAuth() async {
+    // Jika ada logika yang bergantung pada Firebase di masa depan, 
+    // Anda bisa tambahkan pengamanan di sini juga:
+    // if (!isFirebaseReady) return; 
+    
     final token = await ApiClient.getToken();
     if (token != null) {
       try {
