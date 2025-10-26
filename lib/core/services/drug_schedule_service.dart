@@ -114,10 +114,10 @@ class DrugScheduleService {
 
   Future<void> updateDrugSchedule(String id, UpdateDrugScheduleDTO schedule) async {
     try {
-      final response = await ApiClient.dio.put(
-        '/drug-schedules/$id',
-        data: schedule.toJson(),
-      );
+      // final response = await ApiClient.dio.put(
+      //   '/drug-schedules/$id',
+      //   data: schedule.toJson(),
+      // );
       
       } on DioException catch (e) {
       throw Exception('Failed to update schedule: ${e.message}');
@@ -128,9 +128,9 @@ class DrugScheduleService {
 
   Future<void> deleteDrugSchedule(String id) async {
     try {
-      final response = await ApiClient.dio.delete(
-        '/drug-schedules/$id',
-      );
+      // final response = await ApiClient.dio.delete(
+      //   '/drug-schedules/$id',
+      // );
       
       } on DioException catch (e) {
       throw Exception('Failed to delete schedule: ${e.message}');

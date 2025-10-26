@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:tirtha_app/presentation/widgets/app_button.dart';
 import 'package:tirtha_app/presentation/widgets/app_text_field.dart';
 import 'package:tirtha_app/presentation/widgets/password_text_field.dart';
