@@ -27,5 +27,4 @@ class AppRoutes {
   // Reminder
   static const String reminder = '/reminder';
   static const String createReminder = '/reminder/create';
-  // static const String editReminder = '/reminder/{id}/edit';
 }

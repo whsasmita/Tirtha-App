@@ -39,21 +39,13 @@ class ControlScheduleService {
     CreateControlScheduleDTO schedule,
   ) async {
     try {
-      print('🚀 Creating control schedule...');
-      print('📦 Request: ${schedule.toJson()}');
-      
       final response = await ApiClient.dio.post(
         '/control-schedules/',
         data: schedule.toJson(),
       );
       
-      print('✅ Status: ${response.statusCode}');
-      print('📥 Response Type: ${response.data.runtimeType}');
-      
       // Parse response safely
       final Map<String, dynamic> responseMap = _parseResponse(response.data);
-      print('✅ Parsed as Map');
-      
       // Extract data field
       if (!responseMap.containsKey('data')) {
         throw Exception('Response missing "data" field');
@@ -78,10 +70,6 @@ class ControlScheduleService {
       throw Exception('Invalid data format in response');
       
     } on DioException catch (e) {
-      print('❌ DioException: ${e.message}');
-      print('❌ Status: ${e.response?.statusCode}');
-      print('❌ Response: ${e.response?.data}');
-      
       if (e.response?.statusCode == 401) {
         throw Exception('Unauthorized. Please login again.');
       }
@@ -91,24 +79,16 @@ class ControlScheduleService {
       
       throw Exception('Network error: ${e.message}');
     } catch (e) {
-      print('❌ Unexpected error: $e');
       throw Exception('Failed to create control schedule: $e');
     }
   }
 
   Future<List<ControlScheduleResponseDTO>> getControlSchedules() async {
     try {
-      print('🚀 Fetching control schedules...');
-      
       final response = await ApiClient.dio.get('/control-schedules');
-      
-      print('✅ Status: ${response.statusCode}');
-      print('📥 Response Type: ${response.data.runtimeType}');
       
       // Parse response safely
       final Map<String, dynamic> responseMap = _parseResponse(response.data);
-      print('✅ Parsed as Map');
-      
       // Extract data field
       if (!responseMap.containsKey('data')) {
         throw Exception('Response missing "data" field');
@@ -128,10 +108,8 @@ class ControlScheduleService {
       throw Exception('Data field is not a list');
       
     } on DioException catch (e) {
-      print('❌ DioException: ${e.message}');
       throw Exception('Failed to fetch control schedules: ${e.message}');
     } catch (e) {
-      print('❌ Unexpected error: $e');
       throw Exception('Failed to fetch control schedules: $e');
     }
   }
@@ -141,15 +119,10 @@ class ControlScheduleService {
     UpdateControlScheduleDTO schedule,
   ) async {
     try {
-      print('🚀 Updating control schedule ID: $id');
-      print('📦 Request: ${schedule.toJson()}');
-      
       final response = await ApiClient.dio.put(
         '/control-schedules/$id',
         data: schedule.toJson(),
       );
-      
-      print('✅ Status: ${response.statusCode}');
       
       final Map<String, dynamic> responseMap = _parseResponse(response.data);
       
@@ -168,25 +141,17 @@ class ControlScheduleService {
       throw Exception('Invalid data format in response');
       
     } on DioException catch (e) {
-      print('❌ DioException: ${e.message}');
       throw Exception('Failed to update control schedule: ${e.message}');
     } catch (e) {
-      print('❌ Unexpected error: $e');
       throw Exception('Failed to update control schedule: $e');
     }
   }
 
   Future<void> deleteControlSchedule(int id) async {
     try {
-      print('🚀 Deleting control schedule ID: $id');
-      
       final response = await ApiClient.dio.delete('/control-schedules/$id');
       
-      print('✅ Control schedule deleted successfully');
-      
-    } on DioException catch (e) {
-      print('❌ DioException: ${e.message}');
-      
+      } on DioException catch (e) {
       if (e.response?.statusCode == 403) {
         throw Exception('You are not authorized to delete this schedule');
       }
@@ -196,7 +161,6 @@ class ControlScheduleService {
       
       throw Exception('Failed to delete control schedule: ${e.message}');
     } catch (e) {
-      print('❌ Unexpected error: $e');
       throw Exception('Failed to delete control schedule: $e');
     }
   }

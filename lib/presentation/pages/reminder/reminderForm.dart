@@ -63,7 +63,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
     final data = widget.editData;
 
     if (data is DrugScheduleResponseDTO) {
-      print('📝 Loading DRUG data for edit: ${data.toJson()}');
+      // print('📝 Loading DRUG data for edit: ${data.toJson()}');
       
       selectedCategory = 'minum_obat';
       editId = data.id;
@@ -85,10 +85,10 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       selectedDate = _convertDateFromAPI(data.scheduleDate);
       dateController.text = selectedDate!;
 
-      print('✅ Loaded drug data: name=${drugNameController.text}, dose=${doseController.text}, active=$isActive');
+      // print('✅ Loaded drug data: name=${drugNameController.text}, dose=${doseController.text}, active=$isActive');
 
     } else if (data is ControlScheduleResponseDTO) {
-      print('📝 Loading CONTROL data for edit: ${data.toJson()}');
+      // print('📝 Loading CONTROL data for edit: ${data.toJson()}');
       
       selectedCategory = 'kontrol';
       editId = data.id;
@@ -97,10 +97,10 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       selectedDate = _convertDateFromAPI(data.controlDate);
       dateController.text = selectedDate!;
 
-      print('✅ Loaded control data: date=$selectedDate, active=$isActive');
+      // print('✅ Loaded control data: date=$selectedDate, active=$isActive');
 
     } else if (data is HemodialysisScheduleResponseDTO) {
-      print('📝 Loading HEMODIALYSIS data for edit: ${data.toJson()}');
+      // print('📝 Loading HEMODIALYSIS data for edit: ${data.toJson()}');
       
       selectedCategory = 'hemodialisis';
       editId = data.id;
@@ -109,7 +109,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       selectedDate = _convertDateFromAPI(data.scheduleDate);
       dateController.text = selectedDate!;
 
-      print('✅ Loaded hemodialysis data: date=$selectedDate, active=$isActive');
+      // print('✅ Loaded hemodialysis data: date=$selectedDate, active=$isActive');
     }
   }
 
@@ -121,7 +121,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         return '${parts[2]}-${parts[1]}-${parts[0]}';
       }
     } catch (e) {
-      print('⚠️ Date conversion error: $e');
+      // print('⚠️ Date conversion error: $e');
     }
     return apiDate;
   }
@@ -171,7 +171,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         return DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
       }
     } catch (e) {
-      print('⚠️ Date conversion to DateTime error: $e');
+      // print('⚠️ Date conversion to DateTime error: $e');
     }
     return DateTime.now();
   }
@@ -244,7 +244,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         return '${parts[2]}-${parts[1]}-${parts[0]}';
       }
     } catch (e) {
-      print('⚠️ Date conversion error: $e');
+      // print('⚠️ Date conversion error: $e');
     }
     return ddMMyyyyDate;
   }
@@ -305,7 +305,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         isActive: isActive, // KIRIM STATUS
       );
 
-      print('📤 UPDATE Drug Schedule: ${updateSchedule.toJson()}');
+      // print('📤 UPDATE Drug Schedule: ${updateSchedule.toJson()}');
 
       final confirmed = await showDialog<bool>(
         context: context,
@@ -358,7 +358,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
           ),
         );
       } catch (e) {
-        print('❌ Error updating drug schedule: $e');
+        // print('❌ Error updating drug schedule: $e');
         
         if (!mounted) return;
         Navigator.pop(context); // Close loading
@@ -389,7 +389,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         at18: at18,
       );
 
-      print('📤 CREATE Drug Schedule: ${newSchedule.toJson()}');
+      // print('📤 CREATE Drug Schedule: ${newSchedule.toJson()}');
 
       final confirmed = await showDialog<bool>(
         context: context,
@@ -477,7 +477,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         isActive: isActive, // KIRIM STATUS
       );
 
-      print('📤 UPDATE Control Schedule: ${updateSchedule.toJson()}');
+      // print('📤 UPDATE Control Schedule: ${updateSchedule.toJson()}');
 
       final confirmed = await showDialog<bool>(
         context: context,
@@ -638,7 +638,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
         isActive: isActive, // KIRIM STATUS
       );
 
-      print('📤 UPDATE Hemodialysis Schedule: ${updateSchedule.toJson()}');
+      // print('📤 UPDATE Hemodialysis Schedule: ${updateSchedule.toJson()}');
 
       final confirmed = await showDialog<bool>(
         context: context,

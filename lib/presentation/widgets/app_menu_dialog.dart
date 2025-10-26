@@ -164,7 +164,7 @@ class _AppMenuDialogState extends State<AppMenuDialog> {
                                 backgroundColor: Colors.grey.shade200,
                                 backgroundImage: profileImage,
                                 onBackgroundImageError: (exception, stackTrace) {
-                                  print('Error loading profile picture: $exception');
+                                  // print('Error loading profile picture: $exception');
                                 },
                                 child: user.profilePicture == null || user.profilePicture!.isEmpty
                                     ? Icon(

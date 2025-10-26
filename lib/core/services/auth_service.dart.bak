@@ -27,7 +27,12 @@ class AuthService {
         ),
       );
 
+      print('📊 Response Status Register: ${response.statusCode}');
+      print('📥 Response Data Register: ${response.data}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
+        print("✅ Registrasi berhasil: ${response.data['message']}");
+        print("phone_number: $phoneNumber");
         return;
       } else if (response.statusCode == 500) {
         final responseData = response.data;
@@ -62,6 +67,10 @@ class AuthService {
         throw Exception(serverMessage);
       }
     } on DioException catch (e) {
+      print('❌ DioException on Register:');
+      print('   Status Code: ${e.response?.statusCode}');
+      print('   Response Data: ${e.response?.data}');
+      
       if (e.response != null && e.response!.data != null) {
         final statusCode = e.response!.statusCode;
         final responseData = e.response!.data;
@@ -96,6 +105,7 @@ class AuthService {
       
       throw Exception('Koneksi gagal. Coba lagi nanti.');
     } catch (e) {
+      print('❌ Unexpected error (Register): $e');
       if (e is Exception) rethrow;
       throw Exception('Terjadi kesalahan tidak terduga. Silakan coba lagi.');
     }
@@ -122,6 +132,9 @@ class AuthService {
         ),
       );
 
+      print('📊 Response Status: ${response.statusCode}');
+      print('📥 Response Data: ${response.data}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (response.data != null && response.data['token'] != null) {
           final token = response.data['token'];
@@ -131,6 +144,8 @@ class AuthService {
           final userDataMap = profileResponse.data['data'] as Map<String, dynamic>;
           final userData = UserModel.fromJson(userDataMap);
           
+          print("✅ Login berhasil. Timezone yang dikirim: $timezone");
+
           return userData;
         } else {
           throw Exception('Token tidak ditemukan dalam response.');
@@ -157,6 +172,11 @@ class AuthService {
       }
     } on DioException catch (e) {
       String errorMessage = 'Terjadi kesalahan jaringan. Coba lagi.';
+
+      print('❌ DioException caught:');
+      print('   Status Code: ${e.response?.statusCode}');
+      print('   Response Data: ${e.response?.data}');
+      print('   Error Type: ${e.type}');
 
       if (e.response != null) {
         final statusCode = e.response!.statusCode;
@@ -193,6 +213,8 @@ class AuthService {
       
       throw Exception(errorMessage);
     } catch (e) {
+      print('❌ Unexpected error: $e');
+      
       if (e is Exception) {
         rethrow;
       }
@@ -234,7 +256,8 @@ class AuthService {
       // Tambahkan name jika ada
       if (name != null && name.isNotEmpty) {
         formData.fields.add(MapEntry('name', name));
-        }
+        print('📝 Updating name: $name');
+      }
 
       // Tambahkan profile_picture jika ada
       if (profilePicture != null) {
@@ -248,7 +271,8 @@ class AuthService {
             ),
           ),
         );
-        }
+        print('📷 Updating profile picture: $fileName');
+      }
 
       final response = await ApiClient.dio.put(
         '/profile',
@@ -258,7 +282,11 @@ class AuthService {
         ),
       );
 
+      print('📊 Response Status Update Profile: ${response.statusCode}');
+      print('📥 Response Data Update Profile: ${response.data}');
+
       if (response.statusCode == 200 || response.statusCode == 202) {
+        print("✅ Pembaruan profil berhasil: ${response.data['message'] ?? 'Profil berhasil diubah.'}");
         return;
       } else if (response.statusCode == 422) {
         final serverMessage = response.data['message']?.toString() ?? 'Data yang Anda masukkan tidak valid.';
@@ -282,6 +310,10 @@ class AuthService {
       }
     } on DioException catch (e) {
       String errorMessage = 'Terjadi kesalahan jaringan saat memperbarui profil. Coba lagi.';
+
+      print('❌ DioException on Update Profile:');
+      print('   Status Code: ${e.response?.statusCode}');
+      print('   Response Data: ${e.response?.data}');
 
       if (e.response != null) {
         final statusCode = e.response!.statusCode;
@@ -314,6 +346,7 @@ class AuthService {
 
       throw Exception(errorMessage);
     } catch (e) {
+      print('❌ Unexpected error (Update Profile): $e');
       if (e is Exception) rethrow;
       throw Exception('Terjadi kesalahan tidak terduga saat memperbarui profil.');
     }
@@ -344,7 +377,11 @@ class AuthService {
         ),
       );
 
+      print('📊 Response Status Update Password: ${response.statusCode}');
+      print('📥 Response Data Update Password: ${response.data}');
+
       if (response.statusCode == 200 || response.statusCode == 202) {
+        print("✅ Pembaruan password berhasil: ${response.data['message'] ?? 'Password berhasil diubah.'}");
         return;
       } else if (response.statusCode == 422) {
         final serverMessage = response.data['message']?.toString() ?? '';
@@ -364,6 +401,10 @@ class AuthService {
       }
     } on DioException catch (e) {
       String errorMessage = 'Terjadi kesalahan jaringan saat update password. Coba lagi.';
+
+      print('❌ DioException on Update Password:');
+      print('   Status Code: ${e.response?.statusCode}');
+      print('   Response Data: ${e.response?.data}');
 
       if (e.response != null) {
         final statusCode = e.response!.statusCode;
@@ -391,6 +432,7 @@ class AuthService {
 
       throw Exception(errorMessage);
     } catch (e) {
+      print('❌ Unexpected error (Update Password): $e');
       if (e is Exception) rethrow;
       throw Exception('Terjadi kesalahan tidak terduga saat memperbarui password.');
     }
@@ -398,5 +440,6 @@ class AuthService {
 
   Future<void> logout() async {
     await ApiClient.deleteToken();
-    }
+    print("Logout Berhasil");
+  }
 }

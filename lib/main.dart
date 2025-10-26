@@ -31,20 +31,20 @@ import 'package:tirtha_app/core/config/auth_provider.dart';
 // Background message handler
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  print("Handling a background message: ${message.messageId}");
+  // Background message handled
 }
 
 // Create an instance of FlutterLocalNotificationsPlugin
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = 
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
 Future<void> initializeLocalNotifications() async {
   // Android Initialization Settings
-  const AndroidInitializationSettings initializationSettingsAndroid = 
+  const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('notif_icon');
 
   // iOS Initialization Settings
-  final DarwinInitializationSettings initializationSettingsIOS = 
+  final DarwinInitializationSettings initializationSettingsIOS =
       DarwinInitializationSettings(
     requestAlertPermission: true,
     requestBadgePermission: true,
@@ -61,8 +61,7 @@ Future<void> initializeLocalNotifications() async {
   await flutterLocalNotificationsPlugin.initialize(
     initializationSettings,
     onDidReceiveNotificationResponse: (NotificationResponse notificationResponse) async {
-      print('Notification tapped: ${notificationResponse.payload}');
-      // Handle navigation based on payload here
+      // Handle notification tap payload here
     },
   );
 }
@@ -70,7 +69,7 @@ Future<void> initializeLocalNotifications() async {
 // Request notification permissions (especially for iOS)
 Future<void> requestNotificationPermissions() async {
   FirebaseMessaging messaging = FirebaseMessaging.instance;
-  
+
   NotificationSettings settings = await messaging.requestPermission(
     alert: true,
     badge: true,
@@ -78,37 +77,35 @@ Future<void> requestNotificationPermissions() async {
     provisional: false,
   );
 
-  print('User granted permission: ${settings.authorizationStatus}');
-  
-  // Get FCM token
+  // Optionally use settings.authorizationStatus if needed (no prints)
   String? token = await messaging.getToken();
-  print('FCM Token: $token');
+  // Use token as needed (no prints)
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
     // Initialize Firebase
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp();
     }
   } catch (e) {
-    print('Error initialize firebase $e');
+    // Handle Firebase init error (no prints)
   }
 
   // Initialize local notifications
   await initializeLocalNotifications();
-  
+
   // Request notification permissions
   await requestNotificationPermissions();
-  
+
   // Set up background message handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   // Initialize API Client
   ApiClient.init();
-  
+
   runApp(
     MultiProvider(
       providers: [
@@ -161,8 +158,7 @@ class _MyAppState extends State<MyApp> {
 
     // Handle notification tap when app is in background
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print('Notification tapped from background: ${message.messageId}');
-      // Handle navigation based on message data
+      // Handle navigation based on message data (no prints)
     });
   }
 
@@ -174,12 +170,9 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       initialRoute: AppRoutes.preview,
-      
+
       // ✅ GUNAKAN onGenerateRoute UNTUK HANDLE ARGUMENTS
       onGenerateRoute: (settings) {
-        print('🔀 Navigating to: ${settings.name}');
-        print('📦 Arguments: ${settings.arguments}');
-
         // Handle Reminder Form dengan arguments (untuk edit mode)
         if (settings.name == AppRoutes.createReminder) {
           final editData = settings.arguments; // Ambil data edit jika ada
@@ -192,40 +185,40 @@ class _MyAppState extends State<MyApp> {
         switch (settings.name) {
           case AppRoutes.preview:
             return MaterialPageRoute(builder: (context) => const PreviewPage());
-          
+
           case AppRoutes.home:
             return MaterialPageRoute(builder: (context) => const HomePage());
 
           // Auth
           case AppRoutes.login:
             return MaterialPageRoute(builder: (context) => const LoginPage());
-          
+
           case AppRoutes.register:
             return MaterialPageRoute(builder: (context) => const RegisterPage());
-          
+
           case AppRoutes.profile:
             return MaterialPageRoute(builder: (context) => const ProfilePage());
-          
+
           case AppRoutes.about:
             return MaterialPageRoute(builder: (context) => const AboutPage());
 
           // Education & Quiz Dashboard
           case AppRoutes.educationDashboard:
             return MaterialPageRoute(builder: (context) => const EducationDashboardPage());
-          
+
           case AppRoutes.quizDashboard:
             return MaterialPageRoute(builder: (context) => const QuizDashboardPage());
-          
+
           case AppRoutes.createEducation:
             return MaterialPageRoute(builder: (context) => const UpsertEducationPage());
-          
+
           case AppRoutes.createQuiz:
             return MaterialPageRoute(builder: (context) => const UpsertQuizPage());
 
           // List Pages
           case AppRoutes.listEducation:
             return MaterialPageRoute(builder: (context) => const EducationListPage());
-          
+
           case AppRoutes.listQuiz:
             return MaterialPageRoute(builder: (context) => const QuizListPage());
 
@@ -236,22 +229,22 @@ class _MyAppState extends State<MyApp> {
           // Monitoring
           case AppRoutes.monitoring:
             return MaterialPageRoute(builder: (context) => const MonitoringPage());
-          
+
           case AppRoutes.complaintMonitoring:
             return MaterialPageRoute(builder: (context) => const ComplaintMonitoringPage());
-          
+
           case AppRoutes.createComplaintMonitoring:
             return MaterialPageRoute(builder: (context) => const CreateComplaintMonitoring());
-          
+
           case AppRoutes.hemodialysisMonitoring:
             return MaterialPageRoute(builder: (context) => const HemodialysisMonitoringPage());
-          
+
           case AppRoutes.createHemodialysisMonitoring:
             return MaterialPageRoute(builder: (context) => const CreateHemodialysisMonitoring());
-          
+
           case AppRoutes.fluidMonitoring:
             return MaterialPageRoute(builder: (context) => const FluidMonitoringPage());
-          
+
           case AppRoutes.createFluidMonitoring:
             return MaterialPageRoute(builder: (context) => const CreateFluidMonitoringPage());
 

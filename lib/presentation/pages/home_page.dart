@@ -424,9 +424,9 @@ class _HomePageState extends State<HomePage> {
                         } else {
                           // Fallback jika error atau data null
                           userName = 'Pengguna'; 
-                          if (snapshot.hasError) {
-                              print('Error loading user profile: ${snapshot.error}');
-                          }
+                          // if (snapshot.hasError) {
+                          //     print('Error loading user profile: ${snapshot.error}');
+                          // }
                         }
                       }
 

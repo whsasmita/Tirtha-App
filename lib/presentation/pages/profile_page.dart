@@ -629,9 +629,9 @@ class _ProfilePageState extends State<ProfilePage> {
                             count = '...';
                           } else if (eduSnapshot.hasError) {
                             count = '0';
-                            print(
-                              'Error education count: ${eduSnapshot.error}',
-                            );
+                            // print(
+                            //   'Error education count: ${eduSnapshot.error}',
+                            // );
                           } else if (eduSnapshot.hasData) {
                             count = eduSnapshot.data.toString();
                           }
@@ -660,7 +660,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             count = '...';
                           } else if (quizSnapshot.hasError) {
                             count = '0';
-                            print('Error quiz count: ${quizSnapshot.error}');
+                            // print('Error quiz count: ${quizSnapshot.error}');
                           } else if (quizSnapshot.hasData) {
                             count = quizSnapshot.data.toString();
                           }

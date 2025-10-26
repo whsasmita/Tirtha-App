@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tirtha_app/presentation/themes/color.dart';
-import 'package:tirtha_app/presentation/widgets/bottom_nav_v1.dart';
+// import 'package:tirtha_app/presentation/widgets/bottom_nav_v1.dart';
 import 'package:tirtha_app/presentation/widgets/top_bar.dart';
 import 'package:tirtha_app/routes/app_routes.dart';
 import 'package:tirtha_app/core/services/drug_schedule_service.dart';
@@ -96,7 +96,7 @@ class _ReminderPageState extends State<ReminderPage> {
           );
         }
       } catch (e) {
-        print('⚠️ Failed to fetch drug schedules: $e');
+        // print('⚠️ Failed to fetch drug schedules: $e');
       }
 
       // Fetch control schedules
@@ -117,7 +117,7 @@ class _ReminderPageState extends State<ReminderPage> {
           );
         }
       } catch (e) {
-        print('⚠️ Failed to fetch control schedules: $e');
+        // print('⚠️ Failed to fetch control schedules: $e');
       }
 
       // Fetch hemodialysis schedules
@@ -138,7 +138,7 @@ class _ReminderPageState extends State<ReminderPage> {
           );
         }
       } catch (e) {
-        print('⚠️ Failed to fetch hemodialysis schedules: $e');
+        // print('⚠️ Failed to fetch hemodialysis schedules: $e');
       }
 
       // Sort by date (newest first)
@@ -152,7 +152,7 @@ class _ReminderPageState extends State<ReminderPage> {
         });
       }
     } catch (e) {
-      print('❌ Unexpected error in _fetchAllReminders: $e');
+      // print('❌ Unexpected error in _fetchAllReminders: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -563,16 +563,16 @@ class _ReminderPageState extends State<ReminderPage> {
   void _editReminder(int index) async {
     final reminder = _filteredReminders[index];
 
-    print('📝 === EDIT REMINDER DEBUG ===');
-    print('📌 Index: $index');
-    print('📌 Reminder Type: ${reminder.type}');
-    print('📌 Reminder ID: ${reminder.id}');
-    print('📌 Reminder Title: ${reminder.title}');
-    print('📌 Original Data Type: ${reminder.originalData.runtimeType}');
+    // print('📝 === EDIT REMINDER DEBUG ===');
+    // print('📌 Index: $index');
+    // print('📌 Reminder Type: ${reminder.type}');
+    // print('📌 Reminder ID: ${reminder.id}');
+    // print('📌 Reminder Title: ${reminder.title}');
+    // print('📌 Original Data Type: ${reminder.originalData.runtimeType}');
 
     // Cek apakah originalData null
     if (reminder.originalData == null) {
-      print('❌ ERROR: originalData is NULL!');
+      // print('❌ ERROR: originalData is NULL!');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Error: Data pengingat tidak lengkap'),
@@ -584,32 +584,32 @@ class _ReminderPageState extends State<ReminderPage> {
     }
 
     // Print detail data berdasarkan tipe
-    if (reminder.originalData is DrugScheduleResponseDTO) {
-      final drug = reminder.originalData as DrugScheduleResponseDTO;
-      print('💊 Drug Data:');
-      print('   - ID: ${drug.id}');
-      print('   - Name: ${drug.drugName}');
-      print('   - Dose: ${drug.dose}');
-      print('   - Date: ${drug.scheduleDate}');
-      print('   - Active: ${drug.isActive}');
-      print('   - Times: 06=${drug.at06}, 12=${drug.at12}, 18=${drug.at18}');
-    } else if (reminder.originalData is ControlScheduleResponseDTO) {
-      final control = reminder.originalData as ControlScheduleResponseDTO;
-      print('🏥 Control Data:');
-      print('   - ID: ${control.id}');
-      print('   - Date: ${control.controlDate}');
-      print('   - Active: ${control.isActive}');
-    } else if (reminder.originalData is HemodialysisScheduleResponseDTO) {
-      final hemo = reminder.originalData as HemodialysisScheduleResponseDTO;
-      print('💧 Hemodialysis Data:');
-      print('   - ID: ${hemo.id}');
-      print('   - Date: ${hemo.scheduleDate}');
-      print('   - Active: ${hemo.isActive}');
-    } else {
-      print('⚠️ WARNING: Unknown data type!');
-    }
+    // if (reminder.originalData is DrugScheduleResponseDTO) {
+    //   final drug = reminder.originalData as DrugScheduleResponseDTO;
+    //   print('💊 Drug Data:');
+    //   print('   - ID: ${drug.id}');
+    //   print('   - Name: ${drug.drugName}');
+    //   print('   - Dose: ${drug.dose}');
+    //   print('   - Date: ${drug.scheduleDate}');
+    //   print('   - Active: ${drug.isActive}');
+    //   print('   - Times: 06=${drug.at06}, 12=${drug.at12}, 18=${drug.at18}');
+    // } else if (reminder.originalData is ControlScheduleResponseDTO) {
+    //   final control = reminder.originalData as ControlScheduleResponseDTO;
+    //   print('🏥 Control Data:');
+    //   print('   - ID: ${control.id}');
+    //   print('   - Date: ${control.controlDate}');
+    //   print('   - Active: ${control.isActive}');
+    // } else if (reminder.originalData is HemodialysisScheduleResponseDTO) {
+    //   final hemo = reminder.originalData as HemodialysisScheduleResponseDTO;
+    //   print('💧 Hemodialysis Data:');
+    //   print('   - ID: ${hemo.id}');
+    //   print('   - Date: ${hemo.scheduleDate}');
+    //   print('   - Active: ${hemo.isActive}');
+    // } else {
+    //   print('⚠️ WARNING: Unknown data type!');
+    // }
 
-    print('🚀 Navigating to edit form...');
+    // print('🚀 Navigating to edit form...');
 
     // Navigate dengan arguments
     final result = await Navigator.pushNamed(
@@ -618,18 +618,18 @@ class _ReminderPageState extends State<ReminderPage> {
       arguments: reminder.originalData, // Pass object asli
     );
 
-    print('📥 Navigation result: $result');
+    // print('📥 Navigation result: $result');
 
     if (result == true) {
-      print('✅ Edit successful, refreshing list...');
+      // print('✅ Edit successful, refreshing list...');
       if (mounted) {
         _fetchAllReminders(); // Refresh list
       }
     } else {
-      print('⚠️ Edit cancelled or failed');
+      // print('⚠️ Edit cancelled or failed');
     }
 
-    print('=== END EDIT REMINDER DEBUG ===\n');
+    // print('=== END EDIT REMINDER DEBUG ===\n');
   }
 
   void _showSuccessDialog(BuildContext context, String title, String message) {
@@ -777,7 +777,7 @@ class _ReminderPageState extends State<ReminderPage> {
         );
       }
     } catch (e) {
-      print('❌ Error deleting reminder: $e');
+      // print('❌ Error deleting reminder: $e');
 
       // Tutup Loading Dialog
       if (mounted) {
@@ -814,7 +814,7 @@ class _ReminderPageState extends State<ReminderPage> {
         return '${parts[2]}-${parts[1]}-${parts[0]}';
       }
     } catch (e) {
-      print('Date format error: $e');
+      // print('Date format error: $e');
     }
     return date;
   }

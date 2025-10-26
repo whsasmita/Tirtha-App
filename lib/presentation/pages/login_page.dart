@@ -164,19 +164,19 @@ class _LoginPageState extends State<LoginPage> {
     try {
       String? token = await FirebaseMessaging.instance.getToken();
 
-      if (token != null) {
-        print('╔════════════════════════════════════════╗');
-        print('║           FCM TOKEN BERHASIL           ║');
-        print('╠════════════════════════════════════════╣');
-        print('║ Token: $token');
-        print('╚════════════════════════════════════════╝');
-      } else {
-        print('⚠️ FCM Token tidak tersedia');
-      }
+      // if (token != null) {
+      //   print('╔════════════════════════════════════════╗');
+      //   print('║           FCM TOKEN BERHASIL           ║');
+      //   print('╠════════════════════════════════════════╣');
+      //   print('║ Token: $token');
+      //   print('╚════════════════════════════════════════╝');
+      // } else {
+      //   print('⚠️ FCM Token tidak tersedia');
+      // }
 
       return token;
     } catch (e) {
-      print('❌ Error mendapatkan FCM token: $e');
+      // print('❌ Error mendapatkan FCM token: $e');
       return null;
     }
   }
@@ -204,39 +204,39 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       // 1. Dapatkan FCM Token
-      print('🔄 Mengambil FCM Token...');
+      // print('🔄 Mengambil FCM Token...');
       String? fcmToken = await _getFcmToken();
 
-      if (fcmToken != null) {
-        print('✅ FCM Token berhasil didapatkan');
-      } else {
-        print('⚠️ Login tanpa FCM Token (notifikasi mungkin tidak berfungsi)');
-      }
+      // if (fcmToken != null) {
+      //   print('✅ FCM Token berhasil didapatkan');
+      // } else {
+      //   print('⚠️ Login tanpa FCM Token (notifikasi mungkin tidak berfungsi)');
+      // }
       
       // 2. 💡 Dapatkan Timezone Perangkat
       final String timezone = _getDeviceTimezone();
-      print('🌎 Timezone detected: $timezone');
+      // print('🌎 Timezone detected: $timezone');
 
 
       // 3. Login dengan email, password, FCM token, dan timezone
-      print('🔄 Proses login ke server...');
+      // print('🔄 Proses login ke server...');
       // 💡 Teruskan timezone ke _authService.login()
       final user = await _authService.login(email, password, fcmToken, timezone);
 
-      print('✅ Login berhasil!');
-      print('👤 User: ${user.name ?? 'Unknown'}');
-      print('📧 Email: ${user.email ?? 'Unknown'}');
+      // print('✅ Login berhasil!');
+      // print('👤 User: ${user.name ?? 'Unknown'}');
+      // print('📧 Email: ${user.email ?? 'Unknown'}');
 
-      if (fcmToken != null) {
-        print('🔔 FCM Token berhasil disimpan ke database');
-      }
+      // if (fcmToken != null) {
+      //   print('🔔 FCM Token berhasil disimpan ke database');
+      // }
 
       // 4. Navigate ke home page
       if (mounted) {
         Navigator.pushReplacementNamed(context, AppRoutes.home);
       }
     } catch (e) {
-      print('❌ Error during login: $e');
+      // print('❌ Error during login: $e');
 
       // Ambil pesan error
       String errorMessage = e.toString();
@@ -246,7 +246,7 @@ class _LoginPageState extends State<LoginPage> {
         errorMessage = errorMessage.substring('Exception: '.length);
       }
 
-      print('📝 Error message: $errorMessage');
+      // print('📝 Error message: $errorMessage');
 
       // Tampilkan dialog error dengan pesan dari AuthService
       if (mounted) {

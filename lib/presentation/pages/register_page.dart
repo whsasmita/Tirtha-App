@@ -342,7 +342,7 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       final String timezone = _getDeviceTimezone();
       
-      print('📤 Request: {name: $name, email: $email, password: $password, timezone: $timezone, phone_number: $phoneNumber}');
+      // print('📤 Request: {name: $name, email: $email, password: $password, timezone: $timezone, phone_number: $phoneNumber}');
 
       await _authService.register(
         name,
@@ -356,7 +356,7 @@ class _RegisterPageState extends State<RegisterPage> {
         _showSuccessDialog();
       }
     } catch (e) {
-      print('❌ Error during registration: $e');
+      // print('❌ Error during registration: $e');
       
       String errorMessage = e.toString();
       
@@ -365,7 +365,7 @@ class _RegisterPageState extends State<RegisterPage> {
         errorMessage = errorMessage.substring('Exception: '.length);
       }
       
-      print('📝 Error message: $errorMessage');
+      // print('📝 Error message: $errorMessage');
       
       if (mounted) {
         _showErrorDialog(errorMessage);

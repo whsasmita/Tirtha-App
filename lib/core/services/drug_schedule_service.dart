@@ -37,21 +37,13 @@ class DrugScheduleService {
 
   Future<DrugScheduleResponseDTO> createDrugSchedule(CreateDrugScheduleDTO schedule) async {
     try {
-      print('🚀 Creating drug schedule...');
-      print('📦 Request: ${schedule.toJson()}');
-      
       final response = await ApiClient.dio.post(
         '/drug-schedules/',
         data: schedule.toJson(),
       );
       
-      print('✅ Status: ${response.statusCode}');
-      print('📥 Response Type: ${response.data.runtimeType}');
-      
       // Parse response safely
       final Map<String, dynamic> responseMap = _parseResponse(response.data);
-      print('✅ Parsed as Map');
-      
       // Extract data field
       if (!responseMap.containsKey('data')) {
         throw Exception('Response missing "data" field');
@@ -76,10 +68,6 @@ class DrugScheduleService {
       throw Exception('Invalid data format in response');
       
     } on DioException catch (e) {
-      print('❌ DioException: ${e.message}');
-      print('❌ Status: ${e.response?.statusCode}');
-      print('❌ Response: ${e.response?.data}');
-      
       if (e.response?.statusCode == 401) {
         throw Exception('Unauthorized. Please login again.');
       }
@@ -89,24 +77,16 @@ class DrugScheduleService {
       
       throw Exception('Network error: ${e.message}');
     } catch (e) {
-      print('❌ Unexpected error: $e');
       throw Exception('Failed to create schedule: $e');
     }
   }
 
   Future<List<DrugScheduleResponseDTO>> getDrugSchedules() async {
     try {
-      print('🚀 Fetching drug schedules...');
-      
       final response = await ApiClient.dio.get('/drug-schedules');
-      
-      print('✅ Status: ${response.statusCode}');
-      print('📥 Response Type: ${response.data.runtimeType}');
       
       // Parse response safely
       final Map<String, dynamic> responseMap = _parseResponse(response.data);
-      print('✅ Parsed as Map');
-      
       // Extract data field
       if (!responseMap.containsKey('data')) {
         throw Exception('Response missing "data" field');
@@ -126,50 +106,35 @@ class DrugScheduleService {
       throw Exception('Data field is not a list');
       
     } on DioException catch (e) {
-      print('❌ DioException: ${e.message}');
       throw Exception('Failed to fetch schedules: ${e.message}');
     } catch (e) {
-      print('❌ Unexpected error: $e');
       throw Exception('Failed to fetch schedules: $e');
     }
   }
 
   Future<void> updateDrugSchedule(String id, UpdateDrugScheduleDTO schedule) async {
     try {
-      print('🚀 Updating drug schedule ID: $id');
-      print('📦 Request: ${schedule.toJson()}');
-      
       final response = await ApiClient.dio.put(
         '/drug-schedules/$id',
         data: schedule.toJson(),
       );
       
-      print('✅ Status: ${response.statusCode}');
-      print('📥 Response Type: ${response.data.runtimeType}');
-    } on DioException catch (e) {
-      print('❌ DioException: ${e.message}');
+      } on DioException catch (e) {
       throw Exception('Failed to update schedule: ${e.message}');
     } catch (e) {
-      print('❌ Unexpected error: $e');
       throw Exception('Failed to update schedule: $e');
     }
   }
 
   Future<void> deleteDrugSchedule(String id) async {
     try {
-      print('🚀 Deleting drug schedule ID: $id');
-      
       final response = await ApiClient.dio.delete(
         '/drug-schedules/$id',
       );
       
-      print('✅ Status: ${response.statusCode}');
-      print('📥 Response Type: ${response.data.runtimeType}');
-    } on DioException catch (e) {
-      print('❌ DioException: ${e.message}');
+      } on DioException catch (e) {
       throw Exception('Failed to delete schedule: ${e.message}');
     } catch (e) {
-      print('❌ Unexpected error: $e');
       throw Exception('Failed to delete schedule: $e');
     }
   } 
