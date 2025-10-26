@@ -1,8 +1,18 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("com.google.gms.google-services")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// Ini adalah sintaks Kotlin untuk membaca file properties
+val keyProperties = Properties()
+val keyPropertiesFile = rootProject.file("key.properties")
+if (keyPropertiesFile.exists()) {
+    keyProperties.load(FileInputStream(keyPropertiesFile))
 }
 
 android {
@@ -13,8 +23,19 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-
         isCoreLibraryDesugaringEnabled = true
+    }
+
+    // Ini adalah sintaks Kotlin untuk signingConfigs
+    signingConfigs {
+        create("release") {
+            if (keyProperties.getProperty("storeFile") != null) {
+                storeFile = file(keyProperties.getProperty("storeFile"))
+                storePassword = keyProperties.getProperty("storePassword")
+                keyAlias = keyProperties.getProperty("keyAlias")
+                keyPassword = keyProperties.getProperty("keyPassword")
+            }
+        }
     }
 
     kotlinOptions {
@@ -27,23 +48,30 @@ android {
         applicationId = "com.example.tirtha_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
     dependencies {
-    // ...existing dependencies...
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
-    // ...existing dependencies...
-}
+        // ...existing dependencies...
+        coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+        // ...existing dependencies...
+    }
 
+    // Ini adalah sintaks Kotlin untuk buildTypes
     buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+
+            // --- TAMBAHKAN 3 BARIS INI ---
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
