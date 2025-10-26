@@ -153,7 +153,7 @@ class HemodialysisScheduleService {
 
   Future<void> deleteHemodialysisSchedule(int id) async {
     try {
-      final response = await ApiClient.dio.delete('/hemodialysis-schedules/$id');
+      // final response = await ApiClient.dio.delete('/hemodialysis-schedules/$id');
       
       } on DioException catch (e) {
       if (e.response?.statusCode == 403) {

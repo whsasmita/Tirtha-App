@@ -149,7 +149,7 @@ class ControlScheduleService {
 
   Future<void> deleteControlSchedule(int id) async {
     try {
-      final response = await ApiClient.dio.delete('/control-schedules/$id');
+      // final response = await ApiClient.dio.delete('/control-schedules/$id');
       
       } on DioException catch (e) {
       if (e.response?.statusCode == 403) {
