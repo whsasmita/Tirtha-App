@@ -28,22 +28,25 @@ import 'package:tirtha_app/core/services/app_client.dart';
 import 'package:provider/provider.dart';
 import 'package:tirtha_app/core/config/auth_provider.dart';
 
+// 👇 PENAMBAHAN: DEFINISI GLOBAL KEY UNTUK NAVIGASI
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+// Create an instance of FlutterLocalNotificationsPlugin
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
 // Background message handler
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   // Background message handled
 }
 
-// Create an instance of FlutterLocalNotificationsPlugin
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
-
 Future<void> initializeLocalNotifications() async {
-  // Android Initialization Settings
+  // ✅ AKTIFKAN KEMBALI (hapus return dan uncomment)
+  
   const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('notif_icon');
+      AndroidInitializationSettings('ic_stat_notification'); // ✅ Ganti dengan nama file
 
-  // iOS Initialization Settings
   final DarwinInitializationSettings initializationSettingsIOS =
       DarwinInitializationSettings(
     requestAlertPermission: true,
@@ -51,17 +54,16 @@ Future<void> initializeLocalNotifications() async {
     requestSoundPermission: true,
   );
 
-  // Combine platform-specific settings
   final InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
     iOS: initializationSettingsIOS,
   );
 
-  // Initialize the plugin
   await flutterLocalNotificationsPlugin.initialize(
     initializationSettings,
-    onDidReceiveNotificationResponse: (NotificationResponse notificationResponse) async {
-      // Handle notification tap payload here
+    onDidReceiveNotificationResponse: (NotificationResponse response) async {
+      // Navigate ke ReminderPage saat notification di-tap
+      navigatorKey.currentState?.pushNamed(AppRoutes.reminder);
     },
   );
 }
@@ -86,14 +88,14 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 1. Definisikan status inisialisasi di luar
-  bool firebaseInitialized = false; 
+  bool firebaseInitialized = false;
 
   try {
     // Initialize Firebase
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp();
       // Tetapkan nilainya setelah berhasil
-      firebaseInitialized = true; 
+      firebaseInitialized = true;
     }
   } catch (e) {
     // Biarkan firebaseInitialized tetap false (nilai default) jika gagal
@@ -110,7 +112,8 @@ void main() async {
       providers: [
         // Gunakan variabel yang sudah diinisialisasi
         ChangeNotifierProvider(
-          create: (context) => AuthProvider(isFirebaseReady: firebaseInitialized),
+          create:
+              (context) => AuthProvider(isFirebaseReady: firebaseInitialized),
         ),
       ],
       child: MyApp(isFirebaseReady: firebaseInitialized),
@@ -120,7 +123,7 @@ void main() async {
 
 class MyApp extends StatefulWidget {
   final bool isFirebaseReady; // 👈 DEFINISI FIELD BARU
-  
+
   const MyApp({super.key, required this.isFirebaseReady});
 
   @override
@@ -140,7 +143,6 @@ class _MyAppState extends State<MyApp> {
       RemoteNotification? notification = message.notification;
       AndroidNotification? android = message.notification?.android;
 
-      // Show notification when app is in foreground
       if (notification != null && android != null) {
         flutterLocalNotificationsPlugin.show(
           notification.hashCode,
@@ -151,21 +153,40 @@ class _MyAppState extends State<MyApp> {
               'default_channel',
               'Default Channel',
               channelDescription: 'This channel is used for important notifications.',
-              icon: 'notif_icon',
-              // largeIcon: DrawableResourceAndroidBitmap('notif_icons'),
+              icon: 'ic_stat_notification',
               color: const Color.fromARGB(255, 33, 150, 243),
               importance: Importance.max,
               priority: Priority.high,
             ),
           ),
+          // ✅ TAMBAHKAN PAYLOAD (opsional, untuk data tambahan)
+          payload: 'reminder', // Identifier untuk ReminderPage
         );
       }
     });
 
-    // Handle notification tap when app is in background
+    // ✅ Handle notification tap when app is in background/terminated
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      // Handle navigation based on message data (no prints)
+      // Navigate ke ReminderPage
+      navigatorKey.currentState?.pushNamed(AppRoutes.reminder);
     });
+
+    // ✅ TAMBAHKAN INI - Handle notification tap when app terminated
+    _checkInitialMessage();
+  }
+
+  // ✅ TAMBAHKAN FUNCTION BARU INI
+  Future<void> _checkInitialMessage() async {
+    // Check if app was opened from notification when terminated
+    RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    
+    if (initialMessage != null) {
+      // App dibuka dari notification saat dalam keadaan terminated
+      // Delay untuk memastikan app sudah fully initialized
+      Future.delayed(const Duration(seconds: 1), () {
+        navigatorKey.currentState?.pushNamed(AppRoutes.reminder);
+      });
+    }
   }
 
   @override
@@ -175,8 +196,10 @@ class _MyAppState extends State<MyApp> {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      // 👇 PERBAIKAN: HUBUNGKAN GLOBAL KEY KE MATERIALAPP
+      navigatorKey: navigatorKey,
       initialRoute: AppRoutes.preview,
-
+      
       // ✅ GUNAKAN onGenerateRoute UNTUK HANDLE ARGUMENTS
       onGenerateRoute: (settings) {
         // Handle Reminder Form dengan arguments (untuk edit mode)
@@ -200,7 +223,9 @@ class _MyAppState extends State<MyApp> {
             return MaterialPageRoute(builder: (context) => const LoginPage());
 
           case AppRoutes.register:
-            return MaterialPageRoute(builder: (context) => const RegisterPage());
+            return MaterialPageRoute(
+              builder: (context) => const RegisterPage(),
+            );
 
           case AppRoutes.profile:
             return MaterialPageRoute(builder: (context) => const ProfilePage());
@@ -210,58 +235,87 @@ class _MyAppState extends State<MyApp> {
 
           // Education & Quiz Dashboard
           case AppRoutes.educationDashboard:
-            return MaterialPageRoute(builder: (context) => const EducationDashboardPage());
+            return MaterialPageRoute(
+              builder: (context) => const EducationDashboardPage(),
+            );
 
           case AppRoutes.quizDashboard:
-            return MaterialPageRoute(builder: (context) => const QuizDashboardPage());
+            return MaterialPageRoute(
+              builder: (context) => const QuizDashboardPage(),
+            );
 
           case AppRoutes.createEducation:
-            return MaterialPageRoute(builder: (context) => const UpsertEducationPage());
+            return MaterialPageRoute(
+              builder: (context) => const UpsertEducationPage(),
+            );
 
           case AppRoutes.createQuiz:
-            return MaterialPageRoute(builder: (context) => const UpsertQuizPage());
+            return MaterialPageRoute(
+              builder: (context) => const UpsertQuizPage(),
+            );
 
           // List Pages
           case AppRoutes.listEducation:
-            return MaterialPageRoute(builder: (context) => const EducationListPage());
+            return MaterialPageRoute(
+              builder: (context) => const EducationListPage(),
+            );
 
           case AppRoutes.listQuiz:
-            return MaterialPageRoute(builder: (context) => const QuizListPage());
+            return MaterialPageRoute(
+              builder: (context) => const QuizListPage(),
+            );
 
           // Reminder
           case AppRoutes.reminder:
-            return MaterialPageRoute(builder: (context) => const ReminderPage());
+            return MaterialPageRoute(
+              builder: (context) => const ReminderPage(),
+            );
 
           // Monitoring
           case AppRoutes.monitoring:
-            return MaterialPageRoute(builder: (context) => const MonitoringPage());
+            return MaterialPageRoute(
+              builder: (context) => const MonitoringPage(),
+            );
 
           case AppRoutes.complaintMonitoring:
-            return MaterialPageRoute(builder: (context) => const ComplaintMonitoringPage());
+            return MaterialPageRoute(
+              builder: (context) => const ComplaintMonitoringPage(),
+            );
 
           case AppRoutes.createComplaintMonitoring:
-            return MaterialPageRoute(builder: (context) => const CreateComplaintMonitoring());
+            return MaterialPageRoute(
+              builder: (context) => const CreateComplaintMonitoring(),
+            );
 
           case AppRoutes.hemodialysisMonitoring:
-            return MaterialPageRoute(builder: (context) => const HemodialysisMonitoringPage());
+            return MaterialPageRoute(
+              builder: (context) => const HemodialysisMonitoringPage(),
+            );
 
           case AppRoutes.createHemodialysisMonitoring:
-            return MaterialPageRoute(builder: (context) => const CreateHemodialysisMonitoring());
+            return MaterialPageRoute(
+              builder: (context) => const CreateHemodialysisMonitoring(),
+            );
 
           case AppRoutes.fluidMonitoring:
-            return MaterialPageRoute(builder: (context) => const FluidMonitoringPage());
+            return MaterialPageRoute(
+              builder: (context) => const FluidMonitoringPage(),
+            );
 
           case AppRoutes.createFluidMonitoring:
-            return MaterialPageRoute(builder: (context) => const CreateFluidMonitoringPage());
+            return MaterialPageRoute(
+              builder: (context) => const CreateFluidMonitoringPage(),
+            );
 
           default:
             // Fallback untuk route yang tidak ditemukan
             return MaterialPageRoute(
-              builder: (context) => Scaffold(
-                body: Center(
-                  child: Text('Route ${settings.name} not found'),
-                ),
-              ),
+              builder:
+                  (context) => Scaffold(
+                    body: Center(
+                      child: Text('Route ${settings.name} not found'),
+                    ),
+                  ),
             );
         }
       },

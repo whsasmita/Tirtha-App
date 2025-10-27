@@ -72,19 +72,17 @@ android {
         versionName = flutter.versionName
     }
 
-    dependencies {
-    // ...existing dependencies...
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
-    // ...existing dependencies...
-    }
-
     buildTypes {
         // Mengakses blok 'release'
         getByName("release") {
             // ⚠️ C. AKTIVASI PROGUARD DAN PENANDATANGANAN RELEASE (Kotlin Script)
-            isMinifyEnabled = true // Perubahan dari minifyEnabled -> isMinifyEnabled
+            isMinifyEnabled = true
+            isShrinkResources = true
             
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"), 
+                "proguard-rules.pro"
+            )
             
             // Menerapkan konfigurasi signing 'release' yang baru
             signingConfig = signingConfigs.getByName("release") 
@@ -94,4 +92,16 @@ android {
 
 flutter {
     source = "../.."
+}
+
+// ====================================================================
+// D. DEPENDENCIES (HARUS DI LUAR BLOK ANDROID!)
+// ====================================================================
+dependencies {
+    // Desugaring untuk backward compatibility
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    
+    // Google Play Core (untuk mengatasi R8 error)
+    implementation("com.google.android.play:core:1.10.3")
+    implementation("com.google.android.play:core-ktx:1.8.1")
 }
