@@ -389,7 +389,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  'Berhasil! 🎉',
+                  'Berhasil!',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 20,

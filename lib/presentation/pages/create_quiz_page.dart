@@ -45,7 +45,7 @@ class _UpsertQuizPageState extends State<UpsertQuizPage> {
       _nameController.text = quiz.name;
       _urlController.text = quiz.url;
     } catch (e) {
-      _showError('Gagal memuat data kuis: ${e.toString().replaceFirst('Exception: ', '')}');
+      _showErrorDialog('Gagal memuat data kuis: ${e.toString().replaceFirst('Exception: ', '')}');
     } finally {
       setState(() {
         _isInitialLoading = false;
@@ -91,9 +91,61 @@ class _UpsertQuizPageState extends State<UpsertQuizPage> {
     );
   }
 
+  Future<void> _showSuccessDialog(String message) async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Berhasil'),
+          content: Text(message),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pop(context, true);
+              },
+              child: const Text(
+                'OK',
+                style: TextStyle(color: AppColors.tertiary, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showErrorDialog(String message) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'OK',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _handleUpsertQuiz() async {
     if (_nameController.text.trim().isEmpty || _urlController.text.trim().isEmpty) {
-      _showError('Judul dan Link tidak boleh kosong.');
+      _showErrorDialog('Judul dan Link tidak boleh kosong.');
       return;
     }
 
@@ -131,25 +183,17 @@ class _UpsertQuizPageState extends State<UpsertQuizPage> {
       }
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(successMessage)),
-        );
-        Navigator.pop(context, true); 
+        await _showSuccessDialog(successMessage);
       }
     } catch (e) {
-      _showError(e.toString().replaceFirst('Exception: ', ''));
+      if (mounted) {
+        _showErrorDialog(e.toString().replaceFirst('Exception: ', ''));
+      }
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
-  }
-
-  void _showError(String message) {
-    setState(() {
-      _errorMessage = message;
-      _isLoading = false;
-    });
   }
 
   Future<void> _handleReset() async {
@@ -212,16 +256,6 @@ class _UpsertQuizPageState extends State<UpsertQuizPage> {
               hintText: 'Masukkan link quiz',
               controller: _urlController,
             ),
-            
-            if (_errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 24.0),
-                child: Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.red),
-                  textAlign: TextAlign.center,
-                ),
-              ),
             
             // Extra space untuk bottom navbar
             const SizedBox(height: 80),

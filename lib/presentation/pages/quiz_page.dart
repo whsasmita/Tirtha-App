@@ -87,11 +87,57 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
     }
   }
 
+  Future<void> _showSuccessDialog(String message) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Berhasil'),
+          content: Text(message),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'OK',
+                style: TextStyle(color: AppColors.tertiary, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showErrorDialog(String message) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'OK',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _launchURL(String url) async {
     if (url.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('URL tidak tersedia')),
-      );
+      _showErrorDialog('URL tidak tersedia');
       return;
     }
 
@@ -103,15 +149,11 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
     try {
       final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal membuka link: $url')),
-        );
+        _showErrorDialog('Gagal membuka link: $url');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Terjadi kesalahan: $e')),
-        );
+        _showErrorDialog('Terjadi kesalahan: $e');
       }
     }
   }
@@ -123,17 +165,23 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
         return AlertDialog(
           title: const Text('Konfirmasi Hapus'),
           content: Text('Apakah Anda yakin ingin menghapus kuis "${quiz.name}"?'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Batal'),
+              child: const Text(
+                'Batal',
+                style: TextStyle(color: Colors.grey),
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
+              child: const Text(
+                'Hapus',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
               ),
-              child: const Text('Hapus'),
             ),
           ],
         );
@@ -146,23 +194,11 @@ class _QuizDashboardPageState extends State<QuizDashboardPage> {
         _loadQuizzes();
         
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Kuis "${quiz.name}" berhasil dihapus'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
-            ),
-          );
+          await _showSuccessDialog('Kuis "${quiz.name}" berhasil dihapus');
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Gagal menghapus kuis: $e'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 2),
-            ),
-          );
+          _showErrorDialog('Gagal menghapus kuis: $e');
         }
       }
     }

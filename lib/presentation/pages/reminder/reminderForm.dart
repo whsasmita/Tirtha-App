@@ -310,7 +310,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Konfirmasi Update'),
+          title: const Text('Konfirmasi Perubahan'),
           content: Text('Anda akan mengubah jadwal obat "${updateSchedule.drugName}" dengan dosis ${updateSchedule.dose} pada tanggal $selectedDate. Lanjutkan?'),
           actions: [
             TextButton(
@@ -320,7 +320,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
             TextButton(
               onPressed: () => Navigator.pop(context, true),
               style: TextButton.styleFrom(foregroundColor: AppColors.tertiary),
-              child: const Text('Update'),
+              child: const Text('Perbarui'),
             ),
           ],
         ),
@@ -482,7 +482,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Konfirmasi Update'),
+          title: const Text('Konfirmasi Perubahan'),
           content: Text('Anda akan mengubah jadwal kontrol pada tanggal $selectedDate. Lanjutkan?'),
           actions: [
             TextButton(
@@ -492,7 +492,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
             TextButton(
               onPressed: () => Navigator.pop(context, true),
               style: TextButton.styleFrom(foregroundColor: AppColors.tertiary),
-              child: const Text('Update'),
+              child: const Text('Perbarui'),
             ),
           ],
         ),
@@ -643,7 +643,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Konfirmasi Update'),
+          title: const Text('Konfirmasi Perbarui'),
           content: Text('Anda akan mengubah jadwal hemodialisis pada tanggal $selectedDate. Lanjutkan?'),
           actions: [
             TextButton(
@@ -653,7 +653,7 @@ class _ReminderFormPageState extends State<ReminderFormPage> {
             TextButton(
               onPressed: () => Navigator.pop(context, true),
               style: TextButton.styleFrom(foregroundColor: AppColors.tertiary),
-              child: const Text('Update'),
+              child: const Text('Perbarui'),
             ),
           ],
         ),

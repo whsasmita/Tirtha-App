@@ -33,7 +33,6 @@ class _QuizListPageState extends State<QuizListPage> {
   String? _error;
   String _searchQuery = "";
   
-  // PERBAIKAN: Aspect ratio disesuaikan untuk card yang lebih tinggi seperti di HomePage
   static const double _cardAspectRatio = 0.75;
 
   @override
@@ -137,14 +136,33 @@ class _QuizListPageState extends State<QuizListPage> {
         setState(() {
           _isLoadingMore = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal memuat lebih banyak data: ${e.toString().replaceAll('Exception: ', '')}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showErrorDialog('Gagal memuat lebih banyak data: ${e.toString().replaceAll('Exception: ', '')}');
       }
     }
+  }
+
+  Future<void> _showErrorDialog(String message) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'OK',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _onItemTapped(int index) {
@@ -163,8 +181,7 @@ class _QuizListPageState extends State<QuizListPage> {
 
   Future<void> _launchURL(String url) async {
     if (url.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('URL tidak tersedia')));
+      _showErrorDialog('URL tidak tersedia');
       return;
     }
 
@@ -177,15 +194,11 @@ class _QuizListPageState extends State<QuizListPage> {
     try {
       final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal membuka link: $url')),
-        );
+        _showErrorDialog('Gagal membuka link: $url');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Terjadi kesalahan: $e')),
-        );
+        _showErrorDialog('Terjadi kesalahan: $e');
       }
     }
   }

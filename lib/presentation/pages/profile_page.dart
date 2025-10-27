@@ -558,7 +558,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (mounted) Navigator.pop(context);
 
       // Tampilkan dialog sukses
-      _showSuccessDialog('Kata sandi Anda berhasil diubah! 🎉');
+      _showSuccessDialog('Kata sandi Anda berhasil diubah!');
     } catch (e) {
       // Tutup loading dialog
       if (mounted) Navigator.pop(context);

@@ -28,7 +28,7 @@ import 'package:tirtha_app/core/services/app_client.dart';
 import 'package:provider/provider.dart';
 import 'package:tirtha_app/core/config/auth_provider.dart';
 
-// 👇 PENAMBAHAN: DEFINISI GLOBAL KEY UNTUK NAVIGASI
+// PENAMBAHAN: DEFINISI GLOBAL KEY UNTUK NAVIGASI
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 // Create an instance of FlutterLocalNotificationsPlugin
@@ -42,10 +42,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 Future<void> initializeLocalNotifications() async {
-  // ✅ AKTIFKAN KEMBALI (hapus return dan uncomment)
-  
   const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('ic_stat_notification'); // ✅ Ganti dengan nama file
+      AndroidInitializationSettings('ic_stat_notification');
 
   final DarwinInitializationSettings initializationSettingsIOS =
       DarwinInitializationSettings(
@@ -122,7 +120,7 @@ void main() async {
 }
 
 class MyApp extends StatefulWidget {
-  final bool isFirebaseReady; // 👈 DEFINISI FIELD BARU
+  final bool isFirebaseReady;
 
   const MyApp({super.key, required this.isFirebaseReady});
 
@@ -159,23 +157,21 @@ class _MyAppState extends State<MyApp> {
               priority: Priority.high,
             ),
           ),
-          // ✅ TAMBAHKAN PAYLOAD (opsional, untuk data tambahan)
           payload: 'reminder', // Identifier untuk ReminderPage
         );
       }
     });
 
-    // ✅ Handle notification tap when app is in background/terminated
+    // Handle notification tap when app is in background/terminated
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       // Navigate ke ReminderPage
       navigatorKey.currentState?.pushNamed(AppRoutes.reminder);
     });
 
-    // ✅ TAMBAHKAN INI - Handle notification tap when app terminated
+    // Handle notification tap when app terminated
     _checkInitialMessage();
   }
 
-  // ✅ TAMBAHKAN FUNCTION BARU INI
   Future<void> _checkInitialMessage() async {
     // Check if app was opened from notification when terminated
     RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
@@ -191,14 +187,10 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    authProvider.checkAuth();
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      // 👇 PERBAIKAN: HUBUNGKAN GLOBAL KEY KE MATERIALAPP
       navigatorKey: navigatorKey,
-      initialRoute: AppRoutes.preview,
+      home: const AuthChecker(), // ✅ Gunakan AuthChecker untuk auto-login
       
       // ✅ GUNAKAN onGenerateRoute UNTUK HANDLE ARGUMENTS
       onGenerateRoute: (settings) {
@@ -318,6 +310,41 @@ class _MyAppState extends State<MyApp> {
                   ),
             );
         }
+      },
+    );
+  }
+}
+
+// ✅ WIDGET BARU: AuthChecker untuk cek status login otomatis
+class AuthChecker extends StatelessWidget {
+  const AuthChecker({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        // Panggil checkAuth saat pertama kali build
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          authProvider.checkAuth();
+        });
+
+        // Cek status authentication
+        if (authProvider.isLoading) {
+          // Tampilkan loading saat mengecek auth
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        // Jika sudah login, langsung ke HomePage
+        if (authProvider.isAuthenticated) {
+          return const HomePage();
+        }
+
+        // Jika belum login, ke PreviewPage
+        return const PreviewPage();
       },
     );
   }

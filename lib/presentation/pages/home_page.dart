@@ -23,20 +23,20 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
-  
+
   // Konstanta untuk konsistensi ukuran card
   static const double _cardWidth = 160;
   static const double _cardAspectRatio = 1.4; // width / height = 1.4
-  static const double _requiredCardHeight = 180.0; 
+  static const double _requiredCardHeight = 180.0;
 
   // PERBAIKAN: Ganti 'late' menjadi 'nullable' (?) untuk menghindari LateInitializationError.
   Future<UserModel?>? _userProfileFuture;
-  
+
   // State untuk education
   List<EducationModel> educationItems = [];
   bool isLoadingEducation = true;
   String? educationError;
-  
+
   // State untuk quiz
   List<QuizModel> quizItems = [];
   bool isLoadingQuiz = true;
@@ -46,7 +46,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     // Inisialisasi future untuk profil di initState
-    _userProfileFuture = AuthService().getUserProfile(); 
+    _userProfileFuture = AuthService().getUserProfile();
     _loadData();
   }
 
@@ -61,21 +61,19 @@ class _HomePageState extends State<HomePage> {
     final limitedWords = words.take(3).toList();
 
     // Mengkapitalisasi setiap kata
-    final capitalizedWords = limitedWords.map((word) {
-      if (word.isEmpty) return '';
-      // Memastikan kata diawali huruf besar, sisa huruf kecil
-      return word[0].toUpperCase() + word.substring(1).toLowerCase();
-    }).toList();
+    final capitalizedWords =
+        limitedWords.map((word) {
+          if (word.isEmpty) return '';
+          // Memastikan kata diawali huruf besar, sisa huruf kecil
+          return word[0].toUpperCase() + word.substring(1).toLowerCase();
+        }).toList();
 
     // Menggabungkan kembali
     return capitalizedWords.join(' ');
   }
 
   Future<void> _loadData() async {
-    await Future.wait([
-      _loadEducations(),
-      _loadQuizzes(),
-    ]);
+    await Future.wait([_loadEducations(), _loadQuizzes()]);
   }
 
   Future<void> _loadEducations() async {
@@ -84,12 +82,12 @@ class _HomePageState extends State<HomePage> {
         isLoadingEducation = true;
         educationError = null; // 💡 Pastikan error dibersihkan sebelum memuat
       });
-      
+
       final educations = await EducationService().fetchAllEducations(
         page: 1,
-        limit: 10, 
+        limit: 10,
       );
-      
+
       if (mounted) {
         setState(() {
           educationItems = educations;
@@ -100,7 +98,7 @@ class _HomePageState extends State<HomePage> {
       if (mounted) {
         setState(() {
           educationError = e.toString().replaceAll('Exception: ', '');
-          educationItems = []; 
+          educationItems = [];
           isLoadingEducation = false;
         });
       }
@@ -113,12 +111,9 @@ class _HomePageState extends State<HomePage> {
         isLoadingQuiz = true;
         quizError = null;
       });
-      
-      final quizzes = await QuizService().fetchAllQuizzes(
-        page: 1,
-        limit: 10, 
-      );
-      
+
+      final quizzes = await QuizService().fetchAllQuizzes(page: 1, limit: 10);
+
       if (mounted) {
         setState(() {
           quizItems = quizzes;
@@ -153,9 +148,9 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _launchURL(String url) async {
     if (url.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('URL tidak tersedia')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('URL tidak tersedia')));
       return;
     }
 
@@ -166,17 +161,20 @@ class _HomePageState extends State<HomePage> {
     final Uri uri = Uri.parse(url);
 
     try {
-      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
       if (!launched && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal membuka link: $url')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal membuka link: $url')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Terjadi kesalahan: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Terjadi kesalahan: $e')));
       }
     }
   }
@@ -185,46 +183,62 @@ class _HomePageState extends State<HomePage> {
     const String phoneNumber = '6281933024927';
     const String message = "Halo, saya ingin bertanya";
 
-    final Uri whatsappUrl = Uri.parse(
+    // Coba 1: Scheme whatsapp://
+    final Uri whatsappScheme = Uri.parse(
       'whatsapp://send?phone=$phoneNumber&text=${Uri.encodeComponent(message)}',
     );
 
-    if (await canLaunchUrl(whatsappUrl)) {
-      await launchUrl(whatsappUrl);
-    } else {
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Error'),
-              content: const Text(
-                'Aplikasi WhatsApp tidak ditemukan di perangkat Anda.',
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('OK'),
+    // Coba 2: Web wa.me
+    final Uri whatsappWeb = Uri.parse(
+      'https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}',
+    );
+
+    try {
+      // Prioritas 1: Coba buka dengan scheme whatsapp://
+      bool launched = await launchUrl(
+        whatsappScheme,
+        mode: LaunchMode.externalNonBrowserApplication,
+      );
+
+      if (!launched) {
+        // Prioritas 2: Fallback ke wa.me
+        await launchUrl(whatsappWeb, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      // Prioritas 3: Jika semua gagal, coba wa.me sebagai last resort
+      try {
+        await launchUrl(whatsappWeb, mode: LaunchMode.externalApplication);
+      } catch (e2) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('WhatsApp Tidak Tersedia'),
+                content: const Text(
+                  'Tidak dapat membuka WhatsApp. Pastikan aplikasi WhatsApp sudah terinstal di perangkat Anda.',
                 ),
-              ],
-            );
-          },
-        );
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
       }
     }
   }
 
   Widget _buildEducationSection() {
-    const double requiredHeight = _requiredCardHeight; 
+    const double requiredHeight = _requiredCardHeight;
 
     if (isLoadingEducation) {
       return const SizedBox(
         height: requiredHeight,
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
+        child: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -239,7 +253,7 @@ class _HomePageState extends State<HomePage> {
               const Icon(Icons.error_outline, size: 48, color: Colors.red),
               const SizedBox(height: 8),
               Text(
-                educationError!, 
+                educationError!,
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.red),
               ),
@@ -265,18 +279,11 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.school_outlined,
-                size: 48,
-                color: Colors.grey[400],
-              ),
+              Icon(Icons.school_outlined, size: 48, color: Colors.grey[400]),
               const SizedBox(height: 8),
               Text(
                 'Belum ada edukasi tersedia',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
             ],
           ),
@@ -292,11 +299,14 @@ class _HomePageState extends State<HomePage> {
         itemBuilder: (context, index) {
           final item = educationItems[index];
           return Container(
-            width: _cardWidth, 
+            width: _cardWidth,
             margin: const EdgeInsets.only(right: 12),
             child: GridItemCard(
-              aspectRatio: _cardAspectRatio, 
-              imageUrl: item.thumbnail.isNotEmpty ? item.thumbnail : 'assets/default_education.png',
+              aspectRatio: _cardAspectRatio,
+              imageUrl:
+                  item.thumbnail.isNotEmpty
+                      ? item.thumbnail
+                      : 'assets/default_education.png',
               title: item.name,
               onTap: () => _launchURL(item.url),
             ),
@@ -310,9 +320,7 @@ class _HomePageState extends State<HomePage> {
     if (isLoadingQuiz) {
       return const SizedBox(
         height: _requiredCardHeight,
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
+        child: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -353,18 +361,11 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.quiz_outlined,
-                size: 48,
-                color: Colors.grey[400],
-              ),
+              Icon(Icons.quiz_outlined, size: 48, color: Colors.grey[400]),
               const SizedBox(height: 8),
               Text(
                 'Belum ada kuis tersedia',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
             ],
           ),
@@ -416,14 +417,14 @@ class _HomePageState extends State<HomePage> {
                     future: _userProfileFuture,
                     builder: (context, snapshot) {
                       String userName = 'Memuat...';
-                      
+
                       if (snapshot.connectionState == ConnectionState.done) {
                         if (snapshot.hasData && snapshot.data!.name != null) {
                           // Terapkan format pada nama yang diambil
                           userName = _formatUserName(snapshot.data!.name);
                         } else {
                           // Fallback jika error atau data null
-                          userName = 'Pengguna'; 
+                          userName = 'Pengguna';
                           // if (snapshot.hasError) {
                           //     print('Error loading user profile: ${snapshot.error}');
                           // }
@@ -434,7 +435,10 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           RichText(
                             text: const TextSpan(
-                              style: TextStyle(fontSize: 20, color: Colors.black),
+                              style: TextStyle(
+                                fontSize: 20,
+                                color: Colors.black,
+                              ),
                               children: [
                                 TextSpan(text: 'Selamat Datang di '),
                                 TextSpan(
@@ -494,7 +498,10 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     const Text(
                       'Edukasi Terbaru',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     TextButton(
                       onPressed: () {
@@ -545,7 +552,10 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     const Text(
                       'Kuis Terbaru',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     TextButton(
                       onPressed: () {

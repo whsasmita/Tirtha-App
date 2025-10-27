@@ -8,10 +8,6 @@ import 'package:tirtha_app/presentation/widgets/app_text_field.dart';
 import 'package:tirtha_app/presentation/widgets/app_bar_back.dart';
 import 'package:tirtha_app/core/services/education_service.dart';
 
-// Asumsi:
-// - EducationService, AppTextField, AppBarBack sudah didefinisikan di tempat lain.
-// - EducationModel memiliki properti 'thumbnail' (URL string) untuk ditampilkan saat edit.
-
 class UpsertEducationPage extends StatefulWidget {
   final int? educationId; 
 
@@ -30,7 +26,6 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
   String? _existingThumbnailUrl; // Untuk menampilkan gambar yang sudah ada saat mode edit
 
   bool _isLoading = false;
-  String? _errorMessage;
   bool _isInitialLoading = true;
 
   @override
@@ -55,10 +50,9 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
       final education = await _educationService.fetchEducationById(widget.educationId!);
       _nameController.text = education.name;
       _urlController.text = education.url;
-      // Asumsi EducationModel memiliki field thumbnail (string URL)
       _existingThumbnailUrl = education.thumbnail; 
     } catch (e) {
-      _showError('Gagal memuat data edukasi: ${e.toString().replaceFirst('Exception: ', '')}');
+      _showErrorDialog('Gagal memuat data edukasi: ${e.toString().replaceFirst('Exception: ', '')}');
     } finally {
       setState(() {
         _isInitialLoading = false;
@@ -76,12 +70,10 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
       if (image != null) {
         setState(() {
           _selectedImage = image;
-          _errorMessage = null; 
         });
       }
     } catch (e) {
-      // Menangani izin atau error lain saat memilih gambar
-      _showError('Gagal memilih gambar. Pastikan izin galeri diizinkan: $e');
+      _showErrorDialog('Gagal memilih gambar. Pastikan izin galeri diizinkan: $e');
     }
   }
 
@@ -123,9 +115,61 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
     );
   }
 
+  Future<void> _showSuccessDialog(String message) async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Berhasil'),
+          content: Text(message),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pop(context, true);
+              },
+              child: const Text(
+                'OK',
+                style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showErrorDialog(String message) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'OK',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _handleUpsertEducation() async {
     if (_nameController.text.trim().isEmpty || _urlController.text.trim().isEmpty) {
-      _showError('Judul dan Link tidak boleh kosong.');
+      _showErrorDialog('Judul dan Link tidak boleh kosong.');
       return;
     }
 
@@ -133,7 +177,7 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
     
     // Validasi Gambar hanya untuk mode Create jika belum ada thumbnail yang tersimpan
     if (!isUpdating && _selectedImage == null) {
-      _showError('Thumbnail gambar wajib diisi saat membuat edukasi baru.');
+      _showErrorDialog('Thumbnail gambar wajib diisi saat membuat edukasi baru.');
       return;
     }
 
@@ -151,7 +195,6 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
   Future<void> _executeUpsertEducation() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
     try {
@@ -172,25 +215,17 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
       }
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(successMessage)),
-        );
-        Navigator.pop(context, true); 
+        await _showSuccessDialog(successMessage);
       }
     } catch (e) {
-      _showError(e.toString().replaceFirst('Exception: ', ''));
+      if (mounted) {
+        _showErrorDialog(e.toString().replaceFirst('Exception: ', ''));
+      }
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
-  }
-
-  void _showError(String message) {
-    setState(() {
-      _errorMessage = message;
-      _isLoading = false;
-    });
   }
 
   Future<void> _handleReset() async {
@@ -207,7 +242,6 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
     setState(() {
       _selectedImage = null; 
       _existingThumbnailUrl = null;
-      _errorMessage = null;
       _isLoading = false;
     });
   }
@@ -272,10 +306,7 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  // Validasi tampilan error jika file wajib tapi belum dipilih
-                  color: !isEditing && _selectedImage == null && _errorMessage != null 
-                        ? Colors.red
-                        : Colors.grey.shade300,
+                  color: Colors.grey.shade300,
                 ),
               ),
               child: Row(
@@ -300,7 +331,7 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: TextButton(
-                      onPressed: _isLoading ? null : _pickImage, // AKTIF
+                      onPressed: _isLoading ? null : _pickImage,
                       child: const Text(
                         'Pilih File',
                         style: TextStyle(
@@ -341,16 +372,6 @@ class _UpsertEducationPageState extends State<UpsertEducationPage> {
                       ),
                     ),
                   ],
-                ),
-              ),
-              
-            if (_errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 24.0),
-                child: Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.red),
-                  textAlign: TextAlign.center,
                 ),
               ),
             
