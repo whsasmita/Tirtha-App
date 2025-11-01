@@ -28,6 +28,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<UserModel>? _getUserProfile;
   Future<int>? _educationCount;
   Future<int>? _quizCount;
+  Future<int>? _totalUserCount;
 
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -40,6 +41,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     _getUserProfile = _profileService.getUserProfile();
+    _totalUserCount = _getTotalUserCount();
   }
 
   @override
@@ -63,6 +65,17 @@ class _ProfilePageState extends State<ProfilePage> {
       final quizzes = await _quizService.fetchAllQuizzes();
       return quizzes.length;
     } catch (e) {
+      return 0;
+    }
+  }
+
+  Future<int> _getTotalUserCount() async {
+    try {
+      // Panggil fungsi getTotalUser dari AuthService
+      final totalUser = await _authService.getTotalUser();
+      return totalUser;
+    } catch (e) {
+      // Jika terjadi error (misal: bukan admin atau error server), kembalikan 0
       return 0;
     }
   }
@@ -576,12 +589,14 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (context, snapshot) {
         Widget bottomNav = const SizedBox.shrink();
 
+        // LOGIKA BOTTOM NAV DIKEMBALIKAN KE VERSI SEBELUMNYA (HANYA V1)
         if (snapshot.hasData) {
           bottomNav = BottomNavV1(
             selectedIndex: _selectedIndex,
             onItemTapped: _onItemTapped,
           );
         }
+        // END LOGIKA BOTTOM NAV
 
         return Scaffold(
           backgroundColor: Colors.white,
@@ -616,6 +631,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  
+                  // ROW EDUKASI & KUIS (2 ELEMEN)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -629,9 +646,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             count = '...';
                           } else if (eduSnapshot.hasError) {
                             count = '0';
-                            // print(
-                            //   'Error education count: ${eduSnapshot.error}',
-                            // );
+                            // print('Error education count: ${eduSnapshot.error}');
                           } else if (eduSnapshot.hasData) {
                             count = eduSnapshot.data.toString();
                           }
@@ -680,6 +695,34 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16), // Jarak antara row dan kotak baru
+                  
+                  // KOTAK TOTAL USER (Full Width, di luar Row)
+                  FutureBuilder<int>(
+                    future: _totalUserCount, // Gunakan Future Total User
+                    builder: (context, userSnapshot) {
+                      String count = '0';
+
+                      if (userSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        count = '...';
+                      } else if (userSnapshot.hasError) {
+                        count = '0';
+                        // print('Error total user count: ${userSnapshot.error}');
+                      } else if (userSnapshot.hasData) {
+                        count = userSnapshot.data.toString();
+                      }
+
+                      // Menggunakan InfoCard dengan lebar penuh, tidak memberikan onPressed
+                      return InfoCard( 
+                        title: 'TOTAL PENGGUNA',
+                        count: count,
+                        backgroundColor: AppColors.primary,
+                        // onPressed tidak diberikan
+                      );
+                    },
+                  ),
+
                   const SizedBox(height: 24),
                 ],
 
@@ -972,32 +1015,31 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 child: CircleAvatar(
                   radius: 40,
-                  backgroundColor:
-                      Colors.white, // Ubah dari Colors.grey[200]
+                  backgroundColor: Colors.white, // Ubah dari Colors.grey[200]
                   child: ClipOval(
                     child:
                         hasProfilePicture
                             ? Image.network(
-                              user.profilePicture!,
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                // Jika error load gambar, tampilkan default avatar
-                                return Image.asset(
-                                  'assets/default-avatar.png',
-                                  width: 80,
-                                  height: 80,
-                                  fit: BoxFit.cover,
-                                );
-                              },
-                            )
+                                user.profilePicture!,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  // Jika error load gambar, tampilkan default avatar
+                                  return Image.asset(
+                                    'assets/default-avatar.png',
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.cover,
+                                  );
+                                },
+                              )
                             : Image.asset(
-                              'assets/default-avatar.png',
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.cover,
-                            ),
+                                'assets/default-avatar.png',
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              ),
                   ),
                 ),
               ),

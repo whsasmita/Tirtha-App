@@ -396,6 +396,54 @@ class AuthService {
     }
   }
 
+  Future<int> getTotalUser() async { // Ubah menjadi Future<int>
+    try {
+      final response = await ApiClient.dio.get('/admin/users/count');
+
+      if (response.statusCode == 200) {
+        final responseData = response.data;
+
+        // Ambil 'data' dari response jika ada, fallback ke responseData sendiri
+        final dynamic dataNode = (responseData != null && responseData['data'] != null)
+            ? responseData['data']
+            : responseData;
+
+        dynamic countValue;
+        if (dataNode is Map && dataNode.containsKey('count')) {
+          countValue = dataNode['count'];
+        } else if (dataNode is int) {
+          // kalau response.data langsung angka
+          countValue = dataNode;
+        } else {
+          // tidak menemukan count
+          throw Exception('Format data total user tidak valid.');
+        }
+
+        if (countValue is int) {
+          return countValue;
+        } else if (countValue is String) {
+          final parsed = int.tryParse(countValue);
+          if (parsed != null) return parsed;
+        } else if (countValue is double) {
+          return countValue.toInt();
+        }
+
+        throw Exception('Format nilai count tidak valid.');
+      } else {
+        final serverMessage = response.data['message']?.toString() ?? 'Gagal mengambil total user.';
+        throw Exception(serverMessage);
+      }
+    } on DioException catch (e) {
+      if (e.response != null && e.response!.data != null) {
+        throw Exception(e.response!.data['message'] ?? 'Gagal mengambil total user.');
+      }
+      throw Exception('Gagal mengambil total user. Periksa koneksi.');
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Terjadi kesalahan tidak terduga saat mengambil total user.');
+    }
+  }
+
   Future<void> logout() async {
     await ApiClient.deleteToken();
     }

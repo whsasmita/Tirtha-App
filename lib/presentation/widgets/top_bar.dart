@@ -29,12 +29,14 @@ class _TopBarState extends State<TopBar> {
   Future<void> _loadUserProfile() async {
     try {
       final user = await _authService.getUserProfile();
+      if (!mounted) return; // <-- prevent setState after dispose
       setState(() {
         _userProfile = user;
         _userRole = user.role ?? 'user';
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return; // <-- prevent setState after dispose
       setState(() {
         _userProfile = null;
         _userRole = 'user';

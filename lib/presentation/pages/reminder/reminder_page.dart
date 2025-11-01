@@ -6,9 +6,11 @@ import 'package:tirtha_app/routes/app_routes.dart';
 import 'package:tirtha_app/core/services/drug_schedule_service.dart';
 import 'package:tirtha_app/core/services/control_schedule_service.dart';
 import 'package:tirtha_app/core/services/hemodialysis_schedule_service.dart';
+import 'package:tirtha_app/core/services/medication_refill_service.dart';
 import 'package:tirtha_app/data/models/drug_schedule_model.dart';
 import 'package:tirtha_app/data/models/control_schedule_model.dart';
 import 'package:tirtha_app/data/models/hemodialysis_schedule_model.dart';
+import 'package:tirtha_app/data/models/medication_refill_model.dart';
 
 // Combined model untuk display
 class ReminderItem {
@@ -57,6 +59,8 @@ class _ReminderPageState extends State<ReminderPage> {
       ControlScheduleService();
   final HemodialysisScheduleService _hemodialysisScheduleService =
       HemodialysisScheduleService();
+  final MedicationRefillService _medicationRefillService =
+      MedicationRefillService();
 
   @override
   void initState() {
@@ -138,6 +142,28 @@ class _ReminderPageState extends State<ReminderPage> {
         // print('⚠️ Failed to fetch hemodialysis schedules: $e');
       }
 
+      try {
+        final refillSchedules =
+            await _medicationRefillService.getRefillSchedules();
+        for (var refill in refillSchedules) {
+          // 🎉 PERBAIKAN: Gunakan refill.refillDate langsung (sudah String dari API)
+          reminders.add(
+            ReminderItem(
+              id: refill.id,
+              type: 'refill',
+              title: 'Jadwal Ambil Obat (Refill)',
+              // Ganti baris error dengan ini:
+              date: refill.refillDate,
+              // 👆 refill.refillDate sudah String dalam format YYYY-MM-DD dari DTO
+              isActive: refill.isActive,
+              originalData: refill,
+            ),
+          );
+        }
+      } catch (e) {
+        // print('⚠️ Failed to fetch medication refill schedules: $e');
+      }
+
       // Sort by date (newest first)
       reminders.sort((a, b) => b.date.compareTo(a.date));
 
@@ -176,16 +202,19 @@ class _ReminderPageState extends State<ReminderPage> {
         filtered = filtered.where((r) => r.type == 'control').toList();
       } else if (_selectedFilter == 'hemodialisis') {
         filtered = filtered.where((r) => r.type == 'hemodialysis').toList();
+      } else if (_selectedFilter == 'refill') {
+        filtered = filtered.where((r) => r.type == 'refill').toList();
       }
     }
 
     // Filter berdasarkan pencarian
     final searchQuery = _searchController.text.toLowerCase();
     if (searchQuery.isNotEmpty) {
-      filtered = filtered.where((reminder) {
-        return reminder.title.toLowerCase().contains(searchQuery) ||
-            (reminder.dose?.toLowerCase().contains(searchQuery) ?? false);
-      }).toList();
+      filtered =
+          filtered.where((reminder) {
+            return reminder.title.toLowerCase().contains(searchQuery) ||
+                (reminder.dose?.toLowerCase().contains(searchQuery) ?? false);
+          }).toList();
     }
 
     setState(() {
@@ -196,183 +225,193 @@ class _ReminderPageState extends State<ReminderPage> {
   void _showFilterDialog() {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.7,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Filter Pengingat',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
+      builder:
+          (context) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.7,
               ),
-              const Divider(height: 1),
-
-              // Scrollable content
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Section: Filter Status
-                      const Text(
-                        'Status',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Filter Pengingat',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      _buildStatusOption(
-                        title: 'Hanya Aktif',
-                        icon: Icons.check_circle,
-                        value: 'active',
-                        currentValue: _selectedStatus,
-                      ),
-
-                      const Divider(height: 20),
-
-                      _buildStatusOption(
-                        title: 'Semua Pengingat',
-                        icon: Icons.all_inclusive,
-                        value: 'all',
-                        currentValue: _selectedStatus,
-                      ),
-
-                      const Divider(height: 20),
-
-                      _buildStatusOption(
-                        title: 'Hanya Tidak Aktif',
-                        icon: Icons.cancel,
-                        value: 'inactive',
-                        currentValue: _selectedStatus,
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Section: Filter Tipe
-                      const Text(
-                        'Tipe Pengingat',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey,
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      _buildFilterOption(
-                        title: 'Semua Tipe',
-                        icon: Icons.apps,
-                        value: null,
-                        currentValue: _selectedFilter,
-                      ),
-
-                      const Divider(height: 20),
-
-                      _buildFilterOption(
-                        title: 'Jadwal Minum Obat',
-                        icon: Icons.medication,
-                        value: 'minum_obat',
-                        currentValue: _selectedFilter,
-                      ),
-
-                      const Divider(height: 20),
-
-                      _buildFilterOption(
-                        title: 'Jadwal Kontrol',
-                        icon: Icons.local_hospital,
-                        value: 'kontrol',
-                        currentValue: _selectedFilter,
-                      ),
-
-                      const Divider(height: 20),
-
-                      _buildFilterOption(
-                        title: 'Jadwal Hemodialisis',
-                        icon: Icons.water_drop,
-                        value: 'hemodialisis',
-                        currentValue: _selectedFilter,
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ),
+                  const Divider(height: 1),
 
-              // Footer buttons
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          setState(() {
-                            _selectedFilter = null;
-                            _selectedStatus = 'active';
-                          });
-                          _applyFilter();
-                          Navigator.pop(context);
-                        },
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                  // Scrollable content
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Section: Filter Status
+                          const Text(
+                            'Status',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
                           ),
-                        ),
-                        child: const Text('Reset'),
+                          const SizedBox(height: 12),
+
+                          _buildStatusOption(
+                            title: 'Hanya Aktif',
+                            icon: Icons.check_circle,
+                            value: 'active',
+                            currentValue: _selectedStatus,
+                          ),
+
+                          const Divider(height: 20),
+
+                          _buildStatusOption(
+                            title: 'Semua Pengingat',
+                            icon: Icons.all_inclusive,
+                            value: 'all',
+                            currentValue: _selectedStatus,
+                          ),
+
+                          const Divider(height: 20),
+
+                          _buildStatusOption(
+                            title: 'Hanya Tidak Aktif',
+                            icon: Icons.cancel,
+                            value: 'inactive',
+                            currentValue: _selectedStatus,
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Section: Filter Tipe
+                          const Text(
+                            'Tipe Pengingat',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          _buildFilterOption(
+                            title: 'Semua Tipe',
+                            icon: Icons.apps,
+                            value: null,
+                            currentValue: _selectedFilter,
+                          ),
+
+                          const Divider(height: 20),
+
+                          _buildFilterOption(
+                            title: 'Jadwal Minum Obat',
+                            icon: Icons.medication,
+                            value: 'minum_obat',
+                            currentValue: _selectedFilter,
+                          ),
+
+                          const Divider(height: 20),
+
+                          _buildFilterOption(
+                            title: 'Jadwal Kontrol',
+                            icon: Icons.local_hospital,
+                            value: 'kontrol',
+                            currentValue: _selectedFilter,
+                          ),
+
+                          const Divider(height: 20),
+
+                          _buildFilterOption(
+                            title: 'Jadwal Hemodialisis',
+                            icon: Icons.water_drop,
+                            value: 'hemodialisis',
+                            currentValue: _selectedFilter,
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          _buildFilterOption(
+                            title: 'Jadwal Ambil Obat',
+                            icon: Icons.event_repeat,
+                            value: 'refill',
+                            currentValue: _selectedFilter,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.tertiary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                  ),
+
+                  // Footer buttons
+                  const Divider(height: 1),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              setState(() {
+                                _selectedFilter = null;
+                                _selectedStatus = 'active';
+                              });
+                              _applyFilter();
+                              Navigator.pop(context);
+                            },
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text('Reset'),
                           ),
                         ),
-                        child: const Text('Tutup'),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.tertiary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text('Tutup'),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -400,9 +439,10 @@ class _ReminderPageState extends State<ReminderPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.tertiary.withOpacity(0.1)
-                    : Colors.grey.shade100,
+                color:
+                    isSelected
+                        ? AppColors.tertiary.withOpacity(0.1)
+                        : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -454,9 +494,10 @@ class _ReminderPageState extends State<ReminderPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.tertiary.withOpacity(0.1)
-                    : Colors.grey.shade100,
+                color:
+                    isSelected
+                        ? AppColors.tertiary.withOpacity(0.1)
+                        : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -511,75 +552,81 @@ class _ReminderPageState extends State<ReminderPage> {
   void _showHelpDialog() {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Atur pengingat harian Anda',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '1. untuk minum obat',
-                      style: TextStyle(fontSize: 15),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      '2. jadwal kontrol',
-                      style: TextStyle(fontSize: 15),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      '3. jadwal hemodialisis',
-                      style: TextStyle(fontSize: 15),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Dengan pengingat yang teratur, Anda bisa lebih disiplin, terhindar dari komplikasi, dan merasa lebih tenang menjalani terapi.',
-                style: TextStyle(fontSize: 14),
-                textAlign: TextAlign.justify,
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.tertiary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
+      builder:
+          (context) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Atur pengingat harian Anda',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '1. untuk minum obat',
+                          style: TextStyle(fontSize: 15),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          '2. jadwal kontrol',
+                          style: TextStyle(fontSize: 15),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          '3. jadwal hemodialisis',
+                          style: TextStyle(fontSize: 15),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          '4. jadwal ambil obat',
+                          style: TextStyle(fontSize: 15),
+                        ),
+                      ],
                     ),
                   ),
-                  child: const Text(
-                    'Mengerti',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Dengan pengingat yang teratur, Anda bisa lebih disiplin, terhindar dari komplikasi, dan merasa lebih tenang menjalani terapi.',
+                    style: TextStyle(fontSize: 14),
+                    textAlign: TextAlign.justify,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.tertiary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                      child: const Text(
+                        'Mengerti',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -587,10 +634,7 @@ class _ReminderPageState extends State<ReminderPage> {
     final reminder = _filteredReminders[index];
 
     if (reminder.originalData == null) {
-      _showErrorDialog(
-        'Error',
-        'Data pengingat tidak lengkap',
-      );
+      _showErrorDialog('Error', 'Data pengingat tidak lengkap');
       return;
     }
 
@@ -737,38 +781,39 @@ class _ReminderPageState extends State<ReminderPage> {
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-        ),
-        title: Row(
-          children: [
-            Icon(
-              Icons.warning_amber_rounded,
-              color: Colors.orange.shade700,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
             ),
-            const SizedBox(width: 8),
-            const Text('Konfirmasi Hapus'),
-          ],
-        ),
-        content: Text(
-          'Apakah Anda yakin ingin menghapus pengingat "${reminder.title}"?\n\nTindakan ini tidak dapat dibatalkan.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+            title: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.orange.shade700,
+                ),
+                const SizedBox(width: 8),
+                const Text('Konfirmasi Hapus'),
+              ],
             ),
-            child: const Text('Hapus'),
+            content: Text(
+              'Apakah Anda yakin ingin menghapus pengingat "${reminder.title}"?\n\nTindakan ini tidak dapat dibatalkan.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Hapus'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
     if (confirmed != true || !mounted) return;
@@ -778,10 +823,11 @@ class _ReminderPageState extends State<ReminderPage> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => WillPopScope(
-          onWillPop: () async => false,
-          child: const Center(child: CircularProgressIndicator()),
-        ),
+        builder:
+            (context) => WillPopScope(
+              onWillPop: () async => false,
+              child: const Center(child: CircularProgressIndicator()),
+            ),
       );
 
       // Proses Penghapusan
@@ -793,6 +839,8 @@ class _ReminderPageState extends State<ReminderPage> {
         await _hemodialysisScheduleService.deleteHemodialysisSchedule(
           reminder.id,
         );
+      } else if (reminder.type == 'refill') {
+        await _medicationRefillService.deleteRefillSchedule(reminder.id);
       }
 
       // Tutup Loading Dialog
@@ -855,6 +903,8 @@ class _ReminderPageState extends State<ReminderPage> {
         return Icons.local_hospital;
       case 'hemodialysis':
         return Icons.water_drop;
+      case 'refill':
+        return Icons.event_repeat;
       default:
         return Icons.notifications;
     }
@@ -868,6 +918,8 @@ class _ReminderPageState extends State<ReminderPage> {
         return Colors.blue;
       case 'hemodialysis':
         return Colors.teal;
+      case 'refill':
+        return Colors.purpleAccent;
       default:
         return Colors.grey;
     }
@@ -881,6 +933,8 @@ class _ReminderPageState extends State<ReminderPage> {
         return 'Kontrol';
       case 'hemodialysis':
         return 'Hemodialisis';
+      case 'refill':
+        return 'Ambil Obat';
       default:
         return 'Pengingat';
     }
@@ -957,10 +1011,11 @@ class _ReminderPageState extends State<ReminderPage> {
                     const SizedBox(width: 12),
                     Container(
                       decoration: BoxDecoration(
-                        color: (_selectedFilter != null ||
-                                _selectedStatus != 'active')
-                            ? AppColors.tertiary
-                            : AppColors.tertiary.withOpacity(0.8),
+                        color:
+                            (_selectedFilter != null ||
+                                    _selectedStatus != 'active')
+                                ? AppColors.tertiary
+                                : AppColors.tertiary.withOpacity(0.8),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Stack(
@@ -1024,8 +1079,12 @@ class _ReminderPageState extends State<ReminderPage> {
                         _selectedFilter == 'minum_obat'
                             ? 'Minum Obat'
                             : _selectedFilter == 'kontrol'
-                                ? 'Kontrol'
-                                : 'Hemodialisis',
+                            ? 'Kontrol'
+                            : _selectedFilter == 'hemodialisis'
+                            ? 'Hemodialisis'
+                            : _selectedFilter == 'refill'
+                            ? 'Ambil Obat'
+                            : 'Unknown',
                       ),
                       deleteIcon: const Icon(Icons.close, size: 18),
                       onDeleted: () {
@@ -1043,233 +1102,239 @@ class _ReminderPageState extends State<ReminderPage> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: _fetchAllReminders,
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _filteredReminders.isEmpty
+              child:
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _filteredReminders.isEmpty
                       ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.calendar_today_outlined,
-                                size: 64,
-                                color: Colors.grey.shade400,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 64,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Tidak ada pengingat',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w500,
                               ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Tidak ada pengingat',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey.shade600,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                textAlign: TextAlign.center,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Tap tombol + untuk membuat pengingat baru',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade500,
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Tap tombol + untuk membuat pengingat baru',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
+                            ),
+                          ],
+                        ),
+                      )
                       : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _filteredReminders.length,
-                          itemBuilder: (context, index) {
-                            final reminder = _filteredReminders[index];
-                            final isExpanded = _expandedItems.contains(index);
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _filteredReminders.length,
+                        itemBuilder: (context, index) {
+                          final reminder = _filteredReminders[index];
+                          final isExpanded = _expandedItems.contains(index);
 
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: reminder.isActive
-                                      ? Colors.grey.shade300
-                                      : Colors.red.shade200,
-                                ),
-                                borderRadius: BorderRadius.circular(15),
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color:
+                                    reminder.isActive
+                                        ? Colors.grey.shade300
+                                        : Colors.red.shade200,
                               ),
-                              child: Column(
-                                children: [
-                                  InkWell(
-                                    onTap: () => _toggleExpand(index),
-                                    borderRadius: BorderRadius.circular(15),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(16),
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(10),
-                                            decoration: BoxDecoration(
-                                              color: _getReminderColor(
-                                                reminder.type,
-                                              ).withOpacity(0.1),
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                            child: Icon(
-                                              _getReminderIcon(reminder.type),
-                                              color: _getReminderColor(
-                                                reminder.type,
-                                              ),
-                                              size: 24,
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: Column(
+                              children: [
+                                InkWell(
+                                  onTap: () => _toggleExpand(index),
+                                  borderRadius: BorderRadius.circular(15),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                            color: _getReminderColor(
+                                              reminder.type,
+                                            ).withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              10,
                                             ),
                                           ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Row(
-                                                  children: [
-                                                    Expanded(
+                                          child: Icon(
+                                            _getReminderIcon(reminder.type),
+                                            color: _getReminderColor(
+                                              reminder.type,
+                                            ),
+                                            size: 24,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      '${_getReminderLabel(reminder.type)}: ${reminder.title}',
+                                                      style: const TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  if (!reminder.isActive)
+                                                    Container(
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 8,
+                                                            vertical: 4,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            Colors.red.shade100,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              12,
+                                                            ),
+                                                      ),
                                                       child: Text(
-                                                        '${_getReminderLabel(reminder.type)}: ${reminder.title}',
-                                                        style: const TextStyle(
-                                                          fontSize: 16,
+                                                        'Non-Aktif',
+                                                        style: TextStyle(
+                                                          fontSize: 10,
+                                                          color:
+                                                              Colors
+                                                                  .red
+                                                                  .shade700,
                                                           fontWeight:
                                                               FontWeight.bold,
                                                         ),
                                                       ),
                                                     ),
-                                                    if (!reminder.isActive)
-                                                      Container(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                          horizontal: 8,
-                                                          vertical: 4,
-                                                        ),
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: Colors
-                                                              .red.shade100,
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(12),
-                                                        ),
-                                                        child: Text(
-                                                          'Non-Aktif',
-                                                          style: TextStyle(
-                                                            fontSize: 10,
-                                                            color: Colors
-                                                                .red.shade700,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  reminder.times != null
-                                                      ? '${_formatDate(reminder.date)} | ${reminder.times}'
-                                                      : _formatDate(
-                                                          reminder.date),
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    color: Colors.grey.shade600,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Icon(
-                                            isExpanded
-                                                ? Icons.keyboard_arrow_up
-                                                : Icons.keyboard_arrow_down,
-                                            color: Colors.grey,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  if (isExpanded) ...[
-                                    const Divider(height: 1),
-                                    Padding(
-                                      padding: const EdgeInsets.all(16),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          if (reminder.dose != null) ...[
-                                            Text(
-                                              'Dosis: ${reminder.dose}',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.grey.shade700,
+                                                ],
                                               ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                          ],
-                                          if (reminder.times != null) ...[
-                                            Text(
-                                              'Jam: ${reminder.times}',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.grey.shade700,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                          ],
-                                          Text(
-                                            'Status: ${reminder.isActive ? 'Aktif' : 'Tidak Aktif'}',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: reminder.isActive
-                                                  ? Colors.green.shade700
-                                                  : Colors.red.shade700,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 16),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.end,
-                                            children: [
-                                              OutlinedButton.icon(
-                                                onPressed: () =>
-                                                    _editReminder(index),
-                                                icon: const Icon(
-                                                  Icons.edit_outlined,
-                                                  size: 18,
-                                                ),
-                                                label: const Text('Edit'),
-                                                style: OutlinedButton.styleFrom(
-                                                  foregroundColor:
-                                                      AppColors.secondary,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              OutlinedButton.icon(
-                                                onPressed: () =>
-                                                    _deleteReminder(index),
-                                                icon: const Icon(
-                                                  Icons.delete_outline,
-                                                  size: 18,
-                                                ),
-                                                label: const Text('Hapus'),
-                                                style: OutlinedButton.styleFrom(
-                                                  foregroundColor: Colors.red,
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                reminder.times != null
+                                                    ? '${_formatDate(reminder.date)} | ${reminder.times}'
+                                                    : _formatDate(
+                                                      reminder.date,
+                                                    ),
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: Colors.grey.shade600,
                                                 ),
                                               ),
                                             ],
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                        Icon(
+                                          isExpanded
+                                              ? Icons.keyboard_arrow_up
+                                              : Icons.keyboard_arrow_down,
+                                          color: Colors.grey,
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
+                                ),
+                                if (isExpanded) ...[
+                                  const Divider(height: 1),
+                                  Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        if (reminder.dose != null) ...[
+                                          Text(
+                                            'Dosis: ${reminder.dose}',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                        ],
+                                        if (reminder.times != null) ...[
+                                          Text(
+                                            'Jam: ${reminder.times}',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                        ],
+                                        Text(
+                                          'Status: ${reminder.isActive ? 'Aktif' : 'Tidak Aktif'}',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color:
+                                                reminder.isActive
+                                                    ? Colors.green.shade700
+                                                    : Colors.red.shade700,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
+                                          children: [
+                                            OutlinedButton.icon(
+                                              onPressed:
+                                                  () => _editReminder(index),
+                                              icon: const Icon(
+                                                Icons.edit_outlined,
+                                                size: 18,
+                                              ),
+                                              label: const Text('Edit'),
+                                              style: OutlinedButton.styleFrom(
+                                                foregroundColor:
+                                                    AppColors.secondary,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            OutlinedButton.icon(
+                                              onPressed:
+                                                  () => _deleteReminder(index),
+                                              icon: const Icon(
+                                                Icons.delete_outline,
+                                                size: 18,
+                                              ),
+                                              label: const Text('Hapus'),
+                                              style: OutlinedButton.styleFrom(
+                                                foregroundColor: Colors.red,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ],
-                              ),
-                            );
-                          },
-                        ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
             ),
           ),
         ],
