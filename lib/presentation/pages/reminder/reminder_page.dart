@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:tirtha_app/presentation/themes/color.dart';
-// import 'package:tirtha_app/presentation/widgets/bottom_nav_v1.dart';
 import 'package:tirtha_app/presentation/widgets/top_bar.dart';
 import 'package:tirtha_app/routes/app_routes.dart';
 import 'package:tirtha_app/core/services/drug_schedule_service.dart';
@@ -14,8 +13,8 @@ import 'package:tirtha_app/data/models/medication_refill_model.dart';
 
 // Combined model untuk display
 class ReminderItem {
-  final int id;
-  final String type; // 'drug', 'control', or 'hemodialysis'
+  final dynamic id; // Changed to dynamic to support both int and String
+  final String type; // 'drug', 'control', 'hemodialysis', or 'refill'
   final String title;
   final String date;
   final String? times;
@@ -146,15 +145,12 @@ class _ReminderPageState extends State<ReminderPage> {
         final refillSchedules =
             await _medicationRefillService.getRefillSchedules();
         for (var refill in refillSchedules) {
-          // 🎉 PERBAIKAN: Gunakan refill.refillDate langsung (sudah String dari API)
           reminders.add(
             ReminderItem(
               id: refill.id,
               type: 'refill',
               title: 'Jadwal Ambil Obat (Refill)',
-              // Ganti baris error dengan ini:
               date: refill.refillDate,
-              // 👆 refill.refillDate sudah String dalam format YYYY-MM-DD dari DTO
               isActive: refill.isActive,
               originalData: refill,
             ),
@@ -830,17 +826,21 @@ class _ReminderPageState extends State<ReminderPage> {
             ),
       );
 
-      // Proses Penghapusan
+      // Proses Penghapusan dengan service yang sudah diperbaiki
       if (reminder.type == 'drug') {
+        // Drug schedule menggunakan String ID
         await _drugScheduleService.deleteDrugSchedule(reminder.id.toString());
       } else if (reminder.type == 'control') {
-        await _controlScheduleService.deleteControlSchedule(reminder.id);
+        // Control schedule menggunakan int ID
+        await _controlScheduleService.deleteControlSchedule(reminder.id as int);
       } else if (reminder.type == 'hemodialysis') {
+        // Hemodialysis schedule menggunakan int ID
         await _hemodialysisScheduleService.deleteHemodialysisSchedule(
-          reminder.id,
+          reminder.id as int,
         );
       } else if (reminder.type == 'refill') {
-        await _medicationRefillService.deleteRefillSchedule(reminder.id);
+        // Refill schedule menggunakan int ID
+        await _medicationRefillService.deleteRefillSchedule(reminder.id as int);
       }
 
       // Tutup Loading Dialog

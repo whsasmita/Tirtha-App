@@ -153,17 +153,22 @@ class HemodialysisScheduleService {
 
   Future<void> deleteHemodialysisSchedule(int id) async {
     try {
-      // final response = await ApiClient.dio.delete('/hemodialysis-schedules/$id');
+      final response = await ApiClient.dio.delete('/hemodialysis-schedules/$id');
       
-      } on DioException catch (e) {
-      if (e.response?.statusCode == 403) {
-        throw Exception('You are not authorized to delete this schedule');
+      // Verify successful deletion
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('Failed to delete hemodialysis schedule');
+      }
+      
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        throw Exception('Unauthorized. Please login again.');
       }
       if (e.response?.statusCode == 404) {
-        throw Exception('Hemodialysis schedule not found');
+        throw Exception('Hemodialysis schedule not found.');
       }
       
-      throw Exception('Failed to delete hemodialysis schedule: ${e.message}');
+      throw Exception('Network error: ${e.message}');
     } catch (e) {
       throw Exception('Failed to delete hemodialysis schedule: $e');
     }
